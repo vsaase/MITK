@@ -20,6 +20,7 @@ See LICENSE.txt or http://www.mitk.org for details.
 #include <vtkCellArray.h>
 #include <vtkCellData.h>
 #include <boost/progress.hpp>
+#include <mitkDiffusionFunctionCollection.h>
 
 namespace itk{
 
@@ -37,16 +38,6 @@ namespace itk{
   template< class OutputImageType >
   TractsToFiberEndingsImageFilter< OutputImageType >::~TractsToFiberEndingsImageFilter()
   {
-  }
-
-  template< class OutputImageType >
-  itk::Point<float, 3> TractsToFiberEndingsImageFilter< OutputImageType >::GetItkPoint(double point[3])
-  {
-    itk::Point<float, 3> itkPoint;
-    itkPoint[0] = point[0];
-    itkPoint[1] = point[1];
-    itkPoint[2] = point[2];
-    return itkPoint;
   }
 
   template< class OutputImageType >
@@ -122,7 +113,7 @@ namespace itk{
       // fill output image
       if (numPoints>0)
       {
-        itk::Point<float, 3> vertex = GetItkPoint(points->GetPoint(0));
+        itk::Point<float, 3> vertex = mitk::imv::GetItkPoint(points->GetPoint(0));
         itk::Index<3> index;
         outImage->TransformPhysicalPointToIndex(vertex, index);
         if (upsampledRegion.IsInside(index))
@@ -140,7 +131,7 @@ namespace itk{
 
       if (numPoints>=2)
       {
-        itk::Point<float, 3> vertex = GetItkPoint(points->GetPoint(numPoints-1));
+        itk::Point<float, 3> vertex = mitk::imv::GetItkPoint(points->GetPoint(numPoints-1));
         itk::Index<3> index;
         outImage->TransformPhysicalPointToIndex(vertex, index);
         if (upsampledRegion.IsInside(index))

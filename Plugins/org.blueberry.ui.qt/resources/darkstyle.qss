@@ -19,6 +19,19 @@ See LICENSE.txt or http://www.mitk.org for details.
   iconAccentColor = #d4821e <- This line is parsed by MITK
 */
 
+font.warning {
+  color: #ff5c33;
+  font-weight: bold;
+}
+
+font.normal {
+  color: #f1f1f1;
+}
+
+font.highlight {
+  color: #d4821e;
+}
+
 QWidget {
   background-color: #2d2d30;
   border: none;
@@ -68,6 +81,7 @@ QToolButton#qt_toolbar_ext_button {
   background-color: transparent;
   border: none;
   min-width: 12px;
+  max-width: 12px;
   padding: 0;
   qproperty-icon: url(:/org.blueberry.ui.qt/dark/tight-right-arrow-textcolor.svg);
 }
@@ -92,6 +106,10 @@ QAbstractItemView {
 
 QAbstractItemView::item {
   color: #f1f1f1;
+}
+
+QAbstractItemView::item:selected {
+  background-color: #1c97ea;
 }
 
 QHeaderView::section {
@@ -584,7 +602,7 @@ QTreeView::indicator:unchecked {
 }
 
 QTreeView::indicator:unchecked:selected {
-  image: url(:/org.blueberry.ui.qt/dark/checkbox-unchecked-hover.svg);
+  image: url(:/org.blueberry.ui.qt/dark/checkbox-unchecked-selected.svg);
 }
 
 QTreeView::indicator:checked, QTreeView::indicator:indeterminate {
@@ -592,5 +610,5 @@ QTreeView::indicator:checked, QTreeView::indicator:indeterminate {
 }
 
 QTreeView::indicator:checked:selected, QTreeView::indicator:indeterminate:selected {
-  image: url(:/org.blueberry.ui.qt/dark/checkbox-checked-hover.svg);
+  image: url(:/org.blueberry.ui.qt/dark/checkbox-checked-selected.svg);
 }

@@ -397,7 +397,6 @@ protected:
   FitFibersToImageFilter();
   virtual ~FitFibersToImageFilter();
 
-  itk::Point<float, 3> GetItkPoint(double point[3]);
   void GetClosestPeak(itk::Index<4> idx, PeakImgType::Pointer m_PeakImage , vnl_vector_fixed<float,3> fiber_dir, int& id, double& w, double& peak_mag );
 
   void CreatePeakSystem();
@@ -454,9 +453,9 @@ protected:
   vnl_sparse_matrix<double>                   A;
   vnl_vector<double>                          b;
   VnlCostFunction                             cost;
-  int                                         sz_x;
-  int                                         sz_y;
-  int                                         sz_z;
+  unsigned int                                sz_x;
+  unsigned int                                sz_y;
+  unsigned int                                sz_z;
   int                                         dim_four_size;
   double                                      m_MeanTractDensity;
   double                                      m_MeanSignal;

@@ -44,7 +44,6 @@ See LICENSE.txt or http://www.mitk.org for details.
 #include <mitkLookupTable.h>
 #include <vtkCardinalSpline.h>
 #include <vtkAppendPolyData.h>
-#include <mitkDiffusionFunctionCollection.h>
 
 const char* mitk::FiberBundle::FIBER_ID_ARRAY = "Fiber_IDs";
 
@@ -81,7 +80,7 @@ mitk::FiberBundle::Pointer mitk::FiberBundle::GetDeepCopy()
   return newFib;
 }
 
-vtkSmartPointer<vtkPolyData> mitk::FiberBundle::GeneratePolyDataByIds(std::vector<long> fiberIds, vtkSmartPointer<vtkFloatArray> weights)
+vtkSmartPointer<vtkPolyData> mitk::FiberBundle::GeneratePolyDataByIds(std::vector<unsigned int> fiberIds, vtkSmartPointer<vtkFloatArray> weights)
 {
   vtkSmartPointer<vtkPolyData> newFiberPolyData = vtkSmartPointer<vtkPolyData>::New();
   vtkSmartPointer<vtkCellArray> newLineSet = vtkSmartPointer<vtkCellArray>::New();
@@ -92,7 +91,7 @@ vtkSmartPointer<vtkPolyData> mitk::FiberBundle::GeneratePolyDataByIds(std::vecto
   auto finIt = fiberIds.begin();
   while ( finIt != fiberIds.end() )
   {
-    if (*finIt < 0 || *finIt>GetNumFibers()){
+    if (*finIt>GetNumFibers()){
       MITK_INFO << "FiberID can not be negative or >NumFibers!!! check id Extraction!" << *finIt;
       break;
     }
@@ -129,20 +128,20 @@ mitk::FiberBundle::Pointer mitk::FiberBundle::AddBundles(std::vector< mitk::Fibe
   // add current fiber bundle
   vtkSmartPointer<vtkFloatArray> weights = vtkSmartPointer<vtkFloatArray>::New();
 
-  int num_weights = this->GetNumFibers();
+  auto num_weights = this->GetNumFibers();
   for (auto fib : fibs)
     num_weights += fib->GetNumFibers();
   weights->SetNumberOfValues(num_weights);
 
   unsigned int counter = 0;
-  for (int i=0; i<m_FiberPolyData->GetNumberOfCells(); i++)
+  for (unsigned int i=0; i<m_FiberPolyData->GetNumberOfCells(); ++i)
   {
     vtkCell* cell = m_FiberPolyData->GetCell(i);
-    int numPoints = cell->GetNumberOfPoints();
+    auto numPoints = cell->GetNumberOfPoints();
     vtkPoints* points = cell->GetPoints();
 
     vtkSmartPointer<vtkPolyLine> container = vtkSmartPointer<vtkPolyLine>::New();
-    for (int j=0; j<numPoints; j++)
+    for (unsigned int j=0; j<numPoints; ++j)
     {
       double p[3];
       points->GetPoint(j, p);
@@ -158,14 +157,14 @@ mitk::FiberBundle::Pointer mitk::FiberBundle::AddBundles(std::vector< mitk::Fibe
   for (auto fib : fibs)
   {
     // add new fiber bundle
-    for (int i=0; i<fib->GetFiberPolyData()->GetNumberOfCells(); i++)
+    for (unsigned int i=0; i<fib->GetFiberPolyData()->GetNumberOfCells(); i++)
     {
       vtkCell* cell = fib->GetFiberPolyData()->GetCell(i);
-      int numPoints = cell->GetNumberOfPoints();
+      auto numPoints = cell->GetNumberOfPoints();
       vtkPoints* points = cell->GetPoints();
 
       vtkSmartPointer<vtkPolyLine> container = vtkSmartPointer<vtkPolyLine>::New();
-      for (int j=0; j<numPoints; j++)
+      for (unsigned int j=0; j<numPoints; j++)
       {
         double p[3];
         points->GetPoint(j, p);
@@ -206,14 +205,14 @@ mitk::FiberBundle::Pointer mitk::FiberBundle::AddBundle(mitk::FiberBundle* fib)
   weights->SetNumberOfValues(this->GetNumFibers()+fib->GetNumFibers());
 
   unsigned int counter = 0;
-  for (int i=0; i<m_FiberPolyData->GetNumberOfCells(); i++)
+  for (unsigned int i=0; i<m_FiberPolyData->GetNumberOfCells(); i++)
   {
     vtkCell* cell = m_FiberPolyData->GetCell(i);
-    int numPoints = cell->GetNumberOfPoints();
+    auto numPoints = cell->GetNumberOfPoints();
     vtkPoints* points = cell->GetPoints();
 
     vtkSmartPointer<vtkPolyLine> container = vtkSmartPointer<vtkPolyLine>::New();
-    for (int j=0; j<numPoints; j++)
+    for (unsigned int j=0; j<numPoints; j++)
     {
       double p[3];
       points->GetPoint(j, p);
@@ -227,14 +226,14 @@ mitk::FiberBundle::Pointer mitk::FiberBundle::AddBundle(mitk::FiberBundle* fib)
   }
 
   // add new fiber bundle
-  for (int i=0; i<fib->GetFiberPolyData()->GetNumberOfCells(); i++)
+  for (unsigned int i=0; i<fib->GetFiberPolyData()->GetNumberOfCells(); i++)
   {
     vtkCell* cell = fib->GetFiberPolyData()->GetCell(i);
-    int numPoints = cell->GetNumberOfPoints();
+    auto numPoints = cell->GetNumberOfPoints();
     vtkPoints* points = cell->GetPoints();
 
     vtkSmartPointer<vtkPolyLine> container = vtkSmartPointer<vtkPolyLine>::New();
-    for (int j=0; j<numPoints; j++)
+    for (unsigned int j=0; j<numPoints; j++)
     {
       double p[3];
       points->GetPoint(j, p);
@@ -266,13 +265,13 @@ mitk::FiberBundle::Pointer mitk::FiberBundle::FilterByWeights(float weight_thr, 
 
   std::vector<float> weights;
 
-  for (int i=0; i<this->GetNumFibers(); i++)
+  for (unsigned int i=0; i<this->GetNumFibers(); i++)
   {
     if ( (invert && this->GetFiberWeight(i)>weight_thr) || (!invert && this->GetFiberWeight(i)<=weight_thr))
       continue;
 
     vtkCell* cell = m_FiberPolyData->GetCell(i);
-    int numPoints = cell->GetNumberOfPoints();
+    auto numPoints = cell->GetNumberOfPoints();
     vtkPoints* points = cell->GetPoints();
 
     vtkSmartPointer<vtkPolyLine> container = vtkSmartPointer<vtkPolyLine>::New();
@@ -313,11 +312,11 @@ mitk::FiberBundle::Pointer mitk::FiberBundle::SubsampleFibers(float factor, bool
   vtkSmartPointer<vtkFloatArray> weights = vtkSmartPointer<vtkFloatArray>::New();
   weights->SetNumberOfValues(new_num_fibs);
 
-  std::vector< int > ids;
-  for (int i=0; i<this->GetNumFibers(); i++)
+  std::vector< unsigned int > ids;
+  for (unsigned int i=0; i<this->GetNumFibers(); i++)
     ids.push_back(i);
   if (random_seed)
-    std::srand(std::time(0));
+    std::srand(static_cast<unsigned int>(std::time(nullptr)));
   else
     std::srand(0);
   std::random_shuffle(ids.begin(), ids.end());
@@ -365,33 +364,33 @@ mitk::FiberBundle::Pointer mitk::FiberBundle::SubtractBundle(mitk::FiberBundle* 
   vtkSmartPointer<vtkPoints> vNewPoints = vtkSmartPointer<vtkPoints>::New();
 
   std::vector< std::vector< itk::Point<float, 3> > > points1;
-  for( int i=0; i<m_NumFibers; i++ )
+  for(unsigned int i=0; i<m_NumFibers; i++ )
   {
     vtkCell* cell = m_FiberPolyData->GetCell(i);
-    int numPoints = cell->GetNumberOfPoints();
+    auto numPoints = cell->GetNumberOfPoints();
     vtkPoints* points = cell->GetPoints();
 
     if (points==nullptr || numPoints<=0)
       continue;
 
-    itk::Point<float, 3> start = GetItkPoint(points->GetPoint(0));
-    itk::Point<float, 3> end = GetItkPoint(points->GetPoint(numPoints-1));
+    itk::Point<float, 3> start = mitk::imv::GetItkPoint(points->GetPoint(0));
+    itk::Point<float, 3> end = mitk::imv::GetItkPoint(points->GetPoint(numPoints-1));
 
     points1.push_back( {start, end} );
   }
 
   std::vector< std::vector< itk::Point<float, 3> > > points2;
-  for( int i=0; i<fib->GetNumFibers(); i++ )
+  for(unsigned int i=0; i<fib->GetNumFibers(); i++ )
   {
     vtkCell* cell = fib->GetFiberPolyData()->GetCell(i);
-    int numPoints = cell->GetNumberOfPoints();
+    auto numPoints = cell->GetNumberOfPoints();
     vtkPoints* points = cell->GetPoints();
 
     if (points==nullptr || numPoints<=0)
       continue;
 
-    itk::Point<float, 3> start = GetItkPoint(points->GetPoint(0));
-    itk::Point<float, 3> end = GetItkPoint(points->GetPoint(numPoints-1));
+    itk::Point<float, 3> start =mitk::imv::GetItkPoint(points->GetPoint(0));
+    itk::Point<float, 3> end =mitk::imv::GetItkPoint(points->GetPoint(numPoints-1));
 
     points2.push_back( {start, end} );
   }
@@ -399,19 +398,12 @@ mitk::FiberBundle::Pointer mitk::FiberBundle::SubtractBundle(mitk::FiberBundle* 
   //  int progress = 0;
   std::vector< int > ids;
 #pragma omp parallel for
-  for (int i=0; i<(int)points1.size(); i++)
+  for (int i=0; i<static_cast<int>(points1.size()); i++)
   {
-    //#pragma omp critical
-    //    {
-    //      progress++;
-    //      std::cout << (int)(100*(float)progress/points1.size()) << "%" << '\r';
-    //      cout.flush();
-    //    }
-
     bool match = false;
     for (unsigned int j=0; j<points2.size(); j++)
     {
-      auto v1 = points1.at(i);
+      auto v1 = points1.at(static_cast<unsigned int>(i));
       auto v2 = points2.at(j);
 
       float dist=0;
@@ -428,7 +420,7 @@ mitk::FiberBundle::Pointer mitk::FiberBundle::SubtractBundle(mitk::FiberBundle* 
       }
       dist /= v1.size();
 
-      if (dist<mitk::eps)
+      if (dist<0.000001f)
       {
         match = true;
         break;
@@ -448,7 +440,7 @@ mitk::FiberBundle::Pointer mitk::FiberBundle::SubtractBundle(mitk::FiberBundle* 
       }
       dist /= v1.size();
 
-      if (dist<mitk::eps)
+      if (dist<0.000001f)
       {
         match = true;
         break;
@@ -463,7 +455,7 @@ mitk::FiberBundle::Pointer mitk::FiberBundle::SubtractBundle(mitk::FiberBundle* 
   for( int i : ids )
   {
     vtkCell* cell = m_FiberPolyData->GetCell(i);
-    int numPoints = cell->GetNumberOfPoints();
+    auto numPoints = cell->GetNumberOfPoints();
     vtkPoints* points = cell->GetPoints();
 
     if (points==nullptr || numPoints<=0)
@@ -487,15 +479,6 @@ mitk::FiberBundle::Pointer mitk::FiberBundle::SubtractBundle(mitk::FiberBundle* 
   return mitk::FiberBundle::New(vNewPolyData);
 }
 
-itk::Point<float, 3> mitk::FiberBundle::GetItkPoint(double point[3])
-{
-  itk::Point<float, 3> itkPoint;
-  itkPoint[0] = point[0];
-  itkPoint[1] = point[1];
-  itkPoint[2] = point[2];
-  return itkPoint;
-}
-
 /*
  * set PolyData (additional flag to recompute fiber geometry, default = true)
  */
@@ -506,7 +489,7 @@ void mitk::FiberBundle::SetFiberPolyData(vtkSmartPointer<vtkPolyData> fiberPD, b
   else
     m_FiberPolyData->DeepCopy(fiberPD);
 
-  m_NumFibers = m_FiberPolyData->GetNumberOfLines();
+  m_NumFibers = static_cast<unsigned int>(m_FiberPolyData->GetNumberOfLines());
 
   if (updateGeometry)
     UpdateFiberGeometry();
@@ -527,17 +510,16 @@ void mitk::FiberBundle::ColorFibersByLength(bool opacity, bool normalize)
   if (m_MaxFiberLength<=0)
     return;
 
-  int numOfPoints = this->GetNumberOfPoints();
+  auto numOfPoints = this->GetNumberOfPoints();
 
   //colors and alpha value for each single point, RGBA = 4 components
   unsigned char rgba[4] = {0,0,0,0};
-  int componentSize = 4;
   m_FiberColors = vtkSmartPointer<vtkUnsignedCharArray>::New();
-  m_FiberColors->Allocate(numOfPoints * componentSize);
-  m_FiberColors->SetNumberOfComponents(componentSize);
+  m_FiberColors->Allocate(numOfPoints * 4);
+  m_FiberColors->SetNumberOfComponents(4);
   m_FiberColors->SetName("FIBER_COLORS");
 
-  int numOfFibers = m_FiberPolyData->GetNumberOfLines();
+  auto numOfFibers = m_FiberPolyData->GetNumberOfLines();
   if (numOfFibers < 1)
     return;
 
@@ -549,30 +531,30 @@ void mitk::FiberBundle::ColorFibersByLength(bool opacity, bool normalize)
   mitkLookup->SetType(mitk::LookupTable::JET);
 
   unsigned int count = 0;
-  for (int i=0; i<m_FiberPolyData->GetNumberOfCells(); i++)
+  for (unsigned int i=0; i<m_FiberPolyData->GetNumberOfCells(); i++)
   {
     vtkCell* cell = m_FiberPolyData->GetCell(i);
-    int numPoints = cell->GetNumberOfPoints();
+    auto numPoints = cell->GetNumberOfPoints();
 
     float l = m_FiberLengths.at(i)/m_MaxFiberLength;
     if (!normalize)
     {
-      l = m_FiberLengths.at(i)/255.0;
-      if (l > 1.0)
+      l = m_FiberLengths.at(i)/255.0f;
+      if (l > 1.0f)
         l = 1.0;
     }
     for (int j=0; j<numPoints; j++)
     {
       double color[3];
-      lookupTable->GetColor(1.0 - l, color);
+      lookupTable->GetColor(1.0 - static_cast<double>(l), color);
 
-      rgba[0] = (unsigned char) (255.0 * color[0]);
-      rgba[1] = (unsigned char) (255.0 * color[1]);
-      rgba[2] = (unsigned char) (255.0 * color[2]);
+      rgba[0] = static_cast<unsigned char>(255.0 * color[0]);
+      rgba[1] = static_cast<unsigned char>(255.0 * color[1]);
+      rgba[2] = static_cast<unsigned char>(255.0 * color[2]);
       if (opacity)
-        rgba[3] = (unsigned char) (255.0 * l);
+        rgba[3] = static_cast<unsigned char>(255.0f * l);
       else
-        rgba[3] = (unsigned char) (255.0);
+        rgba[3] = static_cast<unsigned char>(255.0);
       m_FiberColors->InsertTypedTuple(cell->GetPointId(j), rgba);
       count++;
     }
@@ -591,21 +573,19 @@ void mitk::FiberBundle::ColorFibersByOrientation()
   //  + one fiber with 0 points
   //=================================================
 
-  vtkPoints* extrPoints = nullptr;
-  extrPoints = m_FiberPolyData->GetPoints();
-  int numOfPoints = 0;
+  vtkPoints* extrPoints = m_FiberPolyData->GetPoints();
+  vtkIdType numOfPoints = 0;
   if (extrPoints!=nullptr)
     numOfPoints = extrPoints->GetNumberOfPoints();
 
   //colors and alpha value for each single point, RGBA = 4 components
   unsigned char rgba[4] = {0,0,0,0};
-  int componentSize = 4;
   m_FiberColors = vtkSmartPointer<vtkUnsignedCharArray>::New();
-  m_FiberColors->Allocate(numOfPoints * componentSize);
-  m_FiberColors->SetNumberOfComponents(componentSize);
+  m_FiberColors->Allocate(numOfPoints * 4);
+  m_FiberColors->SetNumberOfComponents(4);
   m_FiberColors->SetName("FIBER_COLORS");
 
-  int numOfFibers = m_FiberPolyData->GetNumberOfLines();
+  auto numOfFibers = m_FiberPolyData->GetNumberOfLines();
   if (numOfFibers < 1)
     return;
 
@@ -642,10 +622,10 @@ void mitk::FiberBundle::ColorFibersByOrientation()
           diff = (diff1 - diff2) / 2.0;
           diff.normalize();
 
-          rgba[0] = (unsigned char) (255.0 * std::fabs(diff[0]));
-          rgba[1] = (unsigned char) (255.0 * std::fabs(diff[1]));
-          rgba[2] = (unsigned char) (255.0 * std::fabs(diff[2]));
-          rgba[3] = (unsigned char) (255.0);
+          rgba[0] = static_cast<unsigned char>(255.0 * std::fabs(diff[0]));
+          rgba[1] = static_cast<unsigned char>(255.0 * std::fabs(diff[1]));
+          rgba[2] = static_cast<unsigned char>(255.0 * std::fabs(diff[2]));
+          rgba[3] = static_cast<unsigned char>(255.0);
         }
         else if (i==0)
         {
@@ -658,10 +638,10 @@ void mitk::FiberBundle::ColorFibersByOrientation()
           diff1 = currentPntvtk - nextPntvtk;
           diff1.normalize();
 
-          rgba[0] = (unsigned char) (255.0 * std::fabs(diff1[0]));
-          rgba[1] = (unsigned char) (255.0 * std::fabs(diff1[1]));
-          rgba[2] = (unsigned char) (255.0 * std::fabs(diff1[2]));
-          rgba[3] = (unsigned char) (255.0);
+          rgba[0] = static_cast<unsigned char>(255.0 * std::fabs(diff1[0]));
+          rgba[1] = static_cast<unsigned char>(255.0 * std::fabs(diff1[1]));
+          rgba[2] = static_cast<unsigned char>(255.0 * std::fabs(diff1[2]));
+          rgba[3] = static_cast<unsigned char>(255.0);
         }
         else if (i==pointsPerFiber-1)
         {
@@ -673,10 +653,10 @@ void mitk::FiberBundle::ColorFibersByOrientation()
           diff2 = currentPntvtk - prevPntvtk;
           diff2.normalize();
 
-          rgba[0] = (unsigned char) (255.0 * std::fabs(diff2[0]));
-          rgba[1] = (unsigned char) (255.0 * std::fabs(diff2[1]));
-          rgba[2] = (unsigned char) (255.0 * std::fabs(diff2[2]));
-          rgba[3] = (unsigned char) (255.0);
+          rgba[0] = static_cast<unsigned char>(255.0 * std::fabs(diff2[0]));
+          rgba[1] = static_cast<unsigned char>(255.0 * std::fabs(diff2[1]));
+          rgba[2] = static_cast<unsigned char>(255.0 * std::fabs(diff2[2]));
+          rgba[3] = static_cast<unsigned char>(255.0);
         }
         m_FiberColors->InsertTypedTuple(idList[i], rgba);
       }
@@ -702,10 +682,9 @@ void mitk::FiberBundle::ColorFibersByCurvature(bool, bool normalize)
 
   //colors and alpha value for each single point, RGBA = 4 components
   unsigned char rgba[4] = {0,0,0,0};
-  int componentSize = 4;
   m_FiberColors = vtkSmartPointer<vtkUnsignedCharArray>::New();
-  m_FiberColors->Allocate(m_FiberPolyData->GetNumberOfPoints() * componentSize);
-  m_FiberColors->SetNumberOfComponents(componentSize);
+  m_FiberColors->Allocate(m_FiberPolyData->GetNumberOfPoints() * 4);
+  m_FiberColors->SetNumberOfComponents(4);
   m_FiberColors->SetName("FIBER_COLORS");
 
   mitk::LookupTable::Pointer mitkLookup = mitk::LookupTable::New();
@@ -719,12 +698,12 @@ void mitk::FiberBundle::ColorFibersByCurvature(bool, bool normalize)
   double min = 1;
   double max = 0;
   MITK_INFO << "Coloring fibers by curvature";
-  boost::progress_display disp(m_FiberPolyData->GetNumberOfCells());
+  boost::progress_display disp(static_cast<unsigned long>(m_FiberPolyData->GetNumberOfCells()));
   for (int i=0; i<m_FiberPolyData->GetNumberOfCells(); i++)
   {
     ++disp;
     vtkCell* cell = m_FiberPolyData->GetCell(i);
-    int numPoints = cell->GetNumberOfPoints();
+    auto numPoints = cell->GetNumberOfPoints();
     vtkPoints* points = cell->GetPoints();
 
     // calculate curvatures
@@ -732,8 +711,8 @@ void mitk::FiberBundle::ColorFibersByCurvature(bool, bool normalize)
     {
       double dist = 0;
       int c = j;
-      std::vector< vnl_vector_fixed< float, 3 > > vectors;
-      vnl_vector_fixed< float, 3 > meanV; meanV.fill(0.0);
+      std::vector< vnl_vector_fixed< double, 3 > > vectors;
+      vnl_vector_fixed< double, 3 > meanV; meanV.fill(0.0);
       while(dist<window/2 && c>1)
       {
         double p1[3];
@@ -741,7 +720,7 @@ void mitk::FiberBundle::ColorFibersByCurvature(bool, bool normalize)
         double p2[3];
         points->GetPoint(c, p2);
 
-        vnl_vector_fixed< float, 3 > v;
+        vnl_vector_fixed< double, 3 > v;
         v[0] = p2[0]-p1[0];
         v[1] = p2[1]-p1[1];
         v[2] = p2[2]-p1[2];
@@ -760,7 +739,7 @@ void mitk::FiberBundle::ColorFibersByCurvature(bool, bool normalize)
         double p2[3];
         points->GetPoint(c+1, p2);
 
-        vnl_vector_fixed< float, 3 > v;
+        vnl_vector_fixed< double, 3 > v;
         v[0] = p2[0]-p1[0];
         v[1] = p2[1]-p1[1];
         v[2] = p2[2]-p1[2];
@@ -797,7 +776,7 @@ void mitk::FiberBundle::ColorFibersByCurvature(bool, bool normalize)
   for (int i=0; i<m_FiberPolyData->GetNumberOfCells(); i++)
   {
     vtkCell* cell = m_FiberPolyData->GetCell(i);
-    int numPoints = cell->GetNumberOfPoints();
+    auto numPoints = cell->GetNumberOfPoints();
     for (int j=0; j<numPoints; j++)
     {
       double color[3];
@@ -808,10 +787,10 @@ void mitk::FiberBundle::ColorFibersByCurvature(bool, bool normalize)
         dev = 1;
       lookupTable->GetColor(dev, color);
 
-      rgba[0] = (unsigned char) (255.0 * color[0]);
-      rgba[1] = (unsigned char) (255.0 * color[1]);
-      rgba[2] = (unsigned char) (255.0 * color[2]);
-      rgba[3] = (unsigned char) (255.0);
+      rgba[0] = static_cast<unsigned char>(255.0 * color[0]);
+      rgba[1] = static_cast<unsigned char>(255.0 * color[1]);
+      rgba[2] = static_cast<unsigned char>(255.0 * color[2]);
+      rgba[3] = static_cast<unsigned char>(255.0);
       m_FiberColors->InsertTypedTuple(cell->GetPointId(j), rgba);
       count++;
     }
@@ -826,7 +805,7 @@ void mitk::FiberBundle::SetFiberOpacity(vtkDoubleArray* FAValArray)
   {
     double faValue = FAValArray->GetValue(i);
     faValue = faValue * 255.0;
-    m_FiberColors->SetComponent(i,3, (unsigned char) faValue );
+    m_FiberColors->SetComponent(i,3, static_cast<unsigned char>(faValue) );
   }
   m_UpdateTime3D.Modified();
   m_UpdateTime2D.Modified();
@@ -867,15 +846,15 @@ void mitk::FiberBundle::ColorFibersByScalarMap(const mitk::PixelType, mitk::Imag
   mitkLookup->SetVtkLookupTable(lookupTable);
   mitkLookup->SetType(mitk::LookupTable::JET);
 
-  double min = 9999999;
-  double max = -9999999;
+  double min = 999999;
+  double max = -999999;
   for(long i=0; i<m_FiberPolyData->GetNumberOfPoints(); ++i)
   {
     Point3D px;
     px[0] = pointSet->GetPoint(i)[0];
     px[1] = pointSet->GetPoint(i)[1];
     px[2] = pointSet->GetPoint(i)[2];
-    double pixelValue = readimage.GetPixelByWorldCoordinates(px);
+    auto pixelValue = static_cast<double>(readimage.GetPixelByWorldCoordinates(px));
     if (pixelValue>max)
       max = pixelValue;
     if (pixelValue<min)
@@ -888,7 +867,7 @@ void mitk::FiberBundle::ColorFibersByScalarMap(const mitk::PixelType, mitk::Imag
     px[0] = pointSet->GetPoint(i)[0];
     px[1] = pointSet->GetPoint(i)[1];
     px[2] = pointSet->GetPoint(i)[2];
-    double pixelValue = readimage.GetPixelByWorldCoordinates(px);
+    auto pixelValue = static_cast<double>(readimage.GetPixelByWorldCoordinates(px));
 
     if (normalize)
       pixelValue = (pixelValue-min)/(max-min);
@@ -898,13 +877,13 @@ void mitk::FiberBundle::ColorFibersByScalarMap(const mitk::PixelType, mitk::Imag
     double color[3];
     lookupTable->GetColor(1-pixelValue, color);
 
-    rgba[0] = (unsigned char) (255.0 * color[0]);
-    rgba[1] = (unsigned char) (255.0 * color[1]);
-    rgba[2] = (unsigned char) (255.0 * color[2]);
+    rgba[0] = static_cast<unsigned char>(255.0 * color[0]);
+    rgba[1] = static_cast<unsigned char>(255.0 * color[1]);
+    rgba[2] = static_cast<unsigned char>(255.0 * color[2]);
     if (opacity)
-      rgba[3] = (unsigned char) (255.0 * pixelValue);
+      rgba[3] = static_cast<unsigned char>(255.0 * pixelValue);
     else
-      rgba[3] = (unsigned char) (255.0);
+      rgba[3] = static_cast<unsigned char>(255.0);
     m_FiberColors->InsertTypedTuple(i, rgba);
   }
   m_UpdateTime3D.Modified();
@@ -931,25 +910,25 @@ void mitk::FiberBundle::ColorFibersByFiberWeights(bool opacity, bool normalize)
 
   float max = -999999;
   float min = 999999;
-  for (int i=0; i<m_NumFibers; i++)
+  for (unsigned int i=0; i<m_NumFibers; i++)
   {
-    double weight = this->GetFiberWeight(i);
+    float weight = this->GetFiberWeight(i);
     if (weight>max)
       max = weight;
     if (weight<min)
       min = weight;
   }
-  if (fabs(max-min)<0.00001)
+  if (fabs(max-min)<0.00001f)
   {
     max = 1;
     min = 0;
   }
 
-  for (int i=0; i<m_NumFibers; i++)
+  for (unsigned int i=0; i<m_NumFibers; i++)
   {
     vtkCell* cell = m_FiberPolyData->GetCell(i);
-    int numPoints = cell->GetNumberOfPoints();
-    double weight = this->GetFiberWeight(i);
+    auto numPoints = cell->GetNumberOfPoints();
+    auto weight = this->GetFiberWeight(i);
 
     for (int j=0; j<numPoints; j++)
     {
@@ -959,15 +938,15 @@ void mitk::FiberBundle::ColorFibersByFiberWeights(bool opacity, bool normalize)
       else if (v>1)
         v = 1;
       double color[3];
-      lookupTable->GetColor(1-v, color);
+      lookupTable->GetColor(static_cast<double>(1-v), color);
 
-      rgba[0] = (unsigned char) (255.0 * color[0]);
-      rgba[1] = (unsigned char) (255.0 * color[1]);
-      rgba[2] = (unsigned char) (255.0 * color[2]);
+      rgba[0] = static_cast<unsigned char>(255.0 * color[0]);
+      rgba[1] = static_cast<unsigned char>(255.0 * color[1]);
+      rgba[2] = static_cast<unsigned char>(255.0 * color[2]);
       if (opacity)
-        rgba[3] = (unsigned char) (255.0 * v);
+        rgba[3] = static_cast<unsigned char>(255.0f * v);
       else
-        rgba[3] = (unsigned char) (255.0);
+        rgba[3] = static_cast<unsigned char>(255.0);
 
       m_FiberColors->InsertTypedTuple(counter, rgba);
       counter++;
@@ -988,10 +967,10 @@ void mitk::FiberBundle::SetFiberColors(float r, float g, float b, float alpha)
   unsigned char rgba[4] = {0,0,0,0};
   for(long i=0; i<m_FiberPolyData->GetNumberOfPoints(); ++i)
   {
-    rgba[0] = (unsigned char) r;
-    rgba[1] = (unsigned char) g;
-    rgba[2] = (unsigned char) b;
-    rgba[3] = (unsigned char) alpha;
+    rgba[0] = static_cast<unsigned char>(r);
+    rgba[1] = static_cast<unsigned char>(g);
+    rgba[2] = static_cast<unsigned char>(b);
+    rgba[3] = static_cast<unsigned char>(alpha);
     m_FiberColors->InsertTypedTuple(i, rgba);
   }
   m_UpdateTime3D.Modified();
@@ -1024,33 +1003,33 @@ float mitk::FiberBundle::GetNumEpFractionInMask(ItkUcharImgType* mask, bool diff
   boost::progress_display disp(m_NumFibers);
   unsigned int in_mask = 0;
 
-  for (int i=0; i<m_NumFibers; i++)
+  for (unsigned int i=0; i<m_NumFibers; i++)
   {
     ++disp;
     vtkCell* cell = PolyData->GetCell(i);
-    int numPoints = cell->GetNumberOfPoints();
+    auto numPoints = cell->GetNumberOfPoints();
     vtkPoints* points = cell->GetPoints();
 
-    itk::Point<float, 3> startVertex = GetItkPoint(points->GetPoint(0));
+    itk::Point<float, 3> startVertex =mitk::imv::GetItkPoint(points->GetPoint(0));
     itk::Index<3> startIndex;
     mask->TransformPhysicalPointToIndex(startVertex, startIndex);
 
-    itk::Point<float, 3> endVertex = GetItkPoint(points->GetPoint(numPoints-1));
+    itk::Point<float, 3> endVertex =mitk::imv::GetItkPoint(points->GetPoint(numPoints-1));
     itk::Index<3> endIndex;
     mask->TransformPhysicalPointToIndex(endVertex, endIndex);
 
     if (mask->GetLargestPossibleRegion().IsInside(startIndex) && mask->GetLargestPossibleRegion().IsInside(endIndex))
     {
       float v1 = mask->GetPixel(startIndex);
-      if (v1 < 0.5)
+      if (v1 < 0.5f)
         continue;
       float v2 = mask->GetPixel(startIndex);
-      if (v2 < 0.5)
+      if (v2 < 0.5f)
         continue;
 
       if (!different_label)
         ++in_mask;
-      else if (v1 != v2)
+      else if (fabs(v1-v2)>0.00001f)
         ++in_mask;
     }
   }
@@ -1064,25 +1043,25 @@ std::tuple<float, float> mitk::FiberBundle::GetDirectionalOverlap(ItkUcharImgTyp
   MITK_INFO << "Calculating overlap";
   auto spacing = mask->GetSpacing();
   boost::progress_display disp(m_NumFibers);
-  float length_sum = 0;
-  float in_mask_length = 0;
-  float aligned_length = 0;
-  for (int i=0; i<m_NumFibers; i++)
+  double length_sum = 0;
+  double in_mask_length = 0;
+  double aligned_length = 0;
+  for (unsigned int i=0; i<m_NumFibers; i++)
   {
     ++disp;
     vtkCell* cell = PolyData->GetCell(i);
-    int numPoints = cell->GetNumberOfPoints();
+    auto numPoints = cell->GetNumberOfPoints();
     vtkPoints* points = cell->GetPoints();
 
     for (int j=0; j<numPoints-1; j++)
     {
-      itk::Point<float, 3> startVertex = GetItkPoint(points->GetPoint(j));
+      itk::Point<float, 3> startVertex =mitk::imv::GetItkPoint(points->GetPoint(j));
       itk::Index<3> startIndex;
       itk::ContinuousIndex<float, 3> startIndexCont;
       mask->TransformPhysicalPointToIndex(startVertex, startIndex);
       mask->TransformPhysicalPointToContinuousIndex(startVertex, startIndexCont);
 
-      itk::Point<float, 3> endVertex = GetItkPoint(points->GetPoint(j + 1));
+      itk::Point<float, 3> endVertex =mitk::imv::GetItkPoint(points->GetPoint(j + 1));
       itk::Index<3> endIndex;
       itk::ContinuousIndex<float, 3> endIndexCont;
       mask->TransformPhysicalPointToIndex(endVertex, endIndex);
@@ -1113,9 +1092,11 @@ std::tuple<float, float> mitk::FiberBundle::GetDirectionalOverlap(ItkUcharImgTyp
           peak[1] = peak_image->GetPixel(idx4);
           idx4[3] = 2;
           peak[2] = peak_image->GetPixel(idx4);
+          if (std::isnan(peak[0]) || std::isnan(peak[1]) || std::isnan(peak[2]) || peak.magnitude()<0.0001f)
+            continue;
           peak.normalize();
           
-          float f = 1.0 - std::acos(std::fabs(dot_product(fdir, peak))) * 2.0/itk::Math::pi;
+          double f = 1.0 - std::acos(std::fabs(static_cast<double>(dot_product(fdir, peak)))) * 2.0/itk::Math::pi;
           aligned_length += segment.second * f;
         }
         length_sum += segment.second;
@@ -1123,7 +1104,7 @@ std::tuple<float, float> mitk::FiberBundle::GetDirectionalOverlap(ItkUcharImgTyp
     }
   }
 
-  if (length_sum==0)
+  if (length_sum<=0.0001)
   {
     MITK_INFO << "Fiber length sum is zero!";
     return std::make_tuple(0,0);
@@ -1140,22 +1121,22 @@ float mitk::FiberBundle::GetOverlap(ItkUcharImgType* mask)
   boost::progress_display disp(m_NumFibers);
   double length_sum = 0;
   double in_mask_length = 0;
-  for (int i=0; i<m_NumFibers; i++)
+  for (unsigned int i=0; i<m_NumFibers; i++)
   {
     ++disp;
     vtkCell* cell = PolyData->GetCell(i);
-    int numPoints = cell->GetNumberOfPoints();
+    auto numPoints = cell->GetNumberOfPoints();
     vtkPoints* points = cell->GetPoints();
 
     for (int j=0; j<numPoints-1; j++)
     {
-      itk::Point<float, 3> startVertex = GetItkPoint(points->GetPoint(j));
+      itk::Point<float, 3> startVertex =mitk::imv::GetItkPoint(points->GetPoint(j));
       itk::Index<3> startIndex;
       itk::ContinuousIndex<float, 3> startIndexCont;
       mask->TransformPhysicalPointToIndex(startVertex, startIndex);
       mask->TransformPhysicalPointToContinuousIndex(startVertex, startIndexCont);
 
-      itk::Point<float, 3> endVertex = GetItkPoint(points->GetPoint(j + 1));
+      itk::Point<float, 3> endVertex =mitk::imv::GetItkPoint(points->GetPoint(j + 1));
       itk::Index<3> endIndex;
       itk::ContinuousIndex<float, 3> endIndexCont;
       mask->TransformPhysicalPointToIndex(endVertex, endIndex);
@@ -1171,12 +1152,12 @@ float mitk::FiberBundle::GetOverlap(ItkUcharImgType* mask)
     }
   }
 
-  if (length_sum==0)
+  if (length_sum<=0.000001)
   {
     MITK_INFO << "Fiber length sum is zero!";
-    return length_sum;
+    return 0;
   }
-  return in_mask_length/length_sum;
+  return static_cast<float>(in_mask_length/length_sum);
 }
 
 mitk::FiberBundle::Pointer mitk::FiberBundle::RemoveFibersOutside(ItkUcharImgType* mask, bool invert)
@@ -1188,12 +1169,12 @@ mitk::FiberBundle::Pointer mitk::FiberBundle::RemoveFibersOutside(ItkUcharImgTyp
 
   MITK_INFO << "Cutting fibers";
   boost::progress_display disp(m_NumFibers);
-  for (int i=0; i<m_NumFibers; i++)
+  for (unsigned int i=0; i<m_NumFibers; i++)
   {
     ++disp;
 
     vtkCell* cell = m_FiberPolyData->GetCell(i);
-    int numPoints = cell->GetNumberOfPoints();
+    auto numPoints = cell->GetNumberOfPoints();
     vtkPoints* points = cell->GetPoints();
 
     vtkSmartPointer<vtkPolyLine> container = vtkSmartPointer<vtkPolyLine>::New();
@@ -1202,7 +1183,7 @@ mitk::FiberBundle::Pointer mitk::FiberBundle::RemoveFibersOutside(ItkUcharImgTyp
     {
       for (int j=0; j<numPoints; j++)
       {
-        itk::Point<float, 3> itkP = GetItkPoint(points->GetPoint(j));
+        itk::Point<float, 3> itkP =mitk::imv::GetItkPoint(points->GetPoint(j));
         itk::Index<3> idx;
         mask->TransformPhysicalPointToIndex(itkP, idx);
 
@@ -1247,12 +1228,12 @@ mitk::FiberBundle::Pointer mitk::FiberBundle::RemoveFibersOutside(ItkUcharImgTyp
 
   vtkSmartPointer<vtkFloatArray> newFiberWeights = vtkSmartPointer<vtkFloatArray>::New();
   newFiberWeights->SetName("FIBER_WEIGHTS");
-  newFiberWeights->SetNumberOfValues(fib_weights.size());
+  newFiberWeights->SetNumberOfValues(static_cast<vtkIdType>(fib_weights.size()));
 
   if (vtkNewCells->GetNumberOfCells()<=0)
     return nullptr;
 
-  for (int i=0; i<newFiberWeights->GetNumberOfValues(); i++)
+  for (unsigned int i=0; i<newFiberWeights->GetNumberOfValues(); i++)
     newFiberWeights->SetValue(i, fib_weights.at(i));
 
 //  vtkSmartPointer<vtkUnsignedCharArray> newFiberColors = vtkSmartPointer<vtkUnsignedCharArray>::New();
@@ -1284,7 +1265,7 @@ mitk::FiberBundle::Pointer mitk::FiberBundle::ExtractFiberSubset(DataNode* roi, 
   if (roi==nullptr || !(dynamic_cast<PlanarFigure*>(roi->GetData()) || dynamic_cast<PlanarFigureComposite*>(roi->GetData())) )
     return nullptr;
 
-  std::vector<long> tmp = ExtractFiberIdSubset(roi, storage);
+  std::vector<unsigned int> tmp = ExtractFiberIdSubset(roi, storage);
 
   if (tmp.size()<=0)
     return mitk::FiberBundle::New();
@@ -1295,9 +1276,9 @@ mitk::FiberBundle::Pointer mitk::FiberBundle::ExtractFiberSubset(DataNode* roi, 
   return fib;
 }
 
-std::vector<long> mitk::FiberBundle::ExtractFiberIdSubset(DataNode *roi, DataStorage* storage)
+std::vector<unsigned int> mitk::FiberBundle::ExtractFiberIdSubset(DataNode *roi, DataStorage* storage)
 {
-  std::vector<long> result;
+  std::vector<unsigned int> result;
   if (roi==nullptr || roi->GetData()==nullptr)
     return result;
 
@@ -1314,14 +1295,14 @@ std::vector<long> mitk::FiberBundle::ExtractFiberIdSubset(DataNode *roi, DataSto
     {
       MITK_INFO << "AND";
       result = this->ExtractFiberIdSubset(children->ElementAt(0), storage);
-      std::vector<long>::iterator it;
+      std::vector<unsigned int>::iterator it;
       for (unsigned int i=1; i<children->Size(); ++i)
       {
-        std::vector<long> inRoi = this->ExtractFiberIdSubset(children->ElementAt(i), storage);
+        std::vector<unsigned int> inRoi = this->ExtractFiberIdSubset(children->ElementAt(i), storage);
 
-        std::vector<long> rest(std::min(result.size(),inRoi.size()));
+        std::vector<unsigned int> rest(std::min(result.size(),inRoi.size()));
         it = std::set_intersection(result.begin(), result.end(), inRoi.begin(), inRoi.end(), rest.begin() );
-        rest.resize( it - rest.begin() );
+        rest.resize( static_cast<unsigned int>(it - rest.begin()) );
         result = rest;
       }
       break;
@@ -1330,34 +1311,34 @@ std::vector<long> mitk::FiberBundle::ExtractFiberIdSubset(DataNode *roi, DataSto
     {
       MITK_INFO << "OR";
       result = ExtractFiberIdSubset(children->ElementAt(0), storage);
-      std::vector<long>::iterator it;
+      std::vector<unsigned int>::iterator it;
       for (unsigned int i=1; i<children->Size(); ++i)
       {
         it = result.end();
-        std::vector<long> inRoi = ExtractFiberIdSubset(children->ElementAt(i), storage);
+        std::vector<unsigned int> inRoi = ExtractFiberIdSubset(children->ElementAt(i), storage);
         result.insert(it, inRoi.begin(), inRoi.end());
       }
 
       // remove duplicates
       sort(result.begin(), result.end());
       it = unique(result.begin(), result.end());
-      result.resize( it - result.begin() );
+      result.resize( static_cast<unsigned int>(it - result.begin()) );
       break;
     }
     case 2: // NOT
     {
       MITK_INFO << "NOT";
-      for(long i=0; i<this->GetNumFibers(); i++)
+      for(unsigned int i=0; i<this->GetNumFibers(); i++)
         result.push_back(i);
 
-      std::vector<long>::iterator it;
+      std::vector<unsigned int>::iterator it;
       for (unsigned int i=0; i<children->Size(); ++i)
       {
-        std::vector<long> inRoi = ExtractFiberIdSubset(children->ElementAt(i), storage);
+        std::vector<unsigned int> inRoi = ExtractFiberIdSubset(children->ElementAt(i), storage);
 
-        std::vector<long> rest(result.size()-inRoi.size());
+        std::vector<unsigned int> rest(result.size()-inRoi.size());
         it = std::set_difference(result.begin(), result.end(), inRoi.begin(), inRoi.end(), rest.begin() );
-        rest.resize( it - rest.begin() );
+        rest.resize( static_cast<unsigned int>(it - rest.begin()) );
         result = rest;
       }
       break;
@@ -1381,11 +1362,11 @@ std::vector<long> mitk::FiberBundle::ExtractFiberIdSubset(DataNode *roi, DataSto
 
       MITK_INFO << "Extracting with polygon";
       boost::progress_display disp(m_NumFibers);
-      for (int i=0; i<m_NumFibers; i++)
+      for (unsigned int i=0; i<m_NumFibers; i++)
       {
         ++disp ;
         vtkCell* cell = m_FiberPolyData->GetCell(i);
-        int numPoints = cell->GetNumberOfPoints();
+        auto numPoints = cell->GetNumberOfPoints();
         vtkPoints* points = cell->GetPoints();
 
         for (int j=0; j<numPoints-1; j++)
@@ -1427,11 +1408,11 @@ std::vector<long> mitk::FiberBundle::ExtractFiberIdSubset(DataNode *roi, DataSto
 
       MITK_INFO << "Extracting with circle";
       boost::progress_display disp(m_NumFibers);
-      for (int i=0; i<m_NumFibers; i++)
+      for (unsigned int i=0; i<m_NumFibers; i++)
       {
         ++disp ;
         vtkCell* cell = m_FiberPolyData->GetCell(i);
-        int numPoints = cell->GetNumberOfPoints();
+        auto numPoints = cell->GetNumberOfPoints();
         vtkPoints* points = cell->GetPoints();
 
         for (int j=0; j<numPoints-1; j++)
@@ -1478,7 +1459,7 @@ void mitk::FiberBundle::UpdateFiberGeometry()
   m_MeanFiberLength = 0;
   m_MedianFiberLength = 0;
   m_LengthStDev = 0;
-  m_NumFibers = m_FiberPolyData->GetNumberOfCells();
+  m_NumFibers = static_cast<unsigned int>(m_FiberPolyData->GetNumberOfCells());
 
   if (m_FiberColors==nullptr || m_FiberColors->GetNumberOfTuples()!=m_FiberPolyData->GetNumberOfPoints())
     this->ColorFibersByOrientation();
@@ -1509,7 +1490,7 @@ void mitk::FiberBundle::UpdateFiberGeometry()
   for (int i=0; i<m_FiberPolyData->GetNumberOfCells(); i++)
   {
     vtkCell* cell = m_FiberPolyData->GetCell(i);
-    int p = cell->GetNumberOfPoints();
+    auto p = cell->GetNumberOfPoints();
     vtkPoints* points = cell->GetPoints();
     float length = 0;
     for (int j=0; j<p-1; j++)
@@ -1519,8 +1500,8 @@ void mitk::FiberBundle::UpdateFiberGeometry()
       double p2[3];
       points->GetPoint(j+1, p2);
 
-      float dist = std::sqrt((p1[0]-p2[0])*(p1[0]-p2[0])+(p1[1]-p2[1])*(p1[1]-p2[1])+(p1[2]-p2[2])*(p1[2]-p2[2]));
-      length += dist;
+      double dist = std::sqrt((p1[0]-p2[0])*(p1[0]-p2[0])+(p1[1]-p2[1])*(p1[1]-p2[1])+(p1[2]-p2[2])*(p1[2]-p2[2]));
+      length += static_cast<float>(dist);
     }
     m_FiberLengths.push_back(length);
     m_MeanFiberLength += length;
@@ -1541,7 +1522,7 @@ void mitk::FiberBundle::UpdateFiberGeometry()
 
   std::vector< float > sortedLengths = m_FiberLengths;
   std::sort(sortedLengths.begin(), sortedLengths.end());
-  for (int i=0; i<m_NumFibers; i++)
+  for (unsigned int i=0; i<m_NumFibers; i++)
     m_LengthStDev += (m_MeanFiberLength-sortedLengths.at(i))*(m_MeanFiberLength-sortedLengths.at(i));
   if (m_NumFibers>1)
     m_LengthStDev /= (m_NumFibers-1);
@@ -1637,62 +1618,21 @@ itk::Matrix< double, 3, 3 > mitk::FiberBundle::TransformMatrix(itk::Matrix< doub
   return m;
 }
 
-itk::Point<float, 3> mitk::FiberBundle::TransformPoint(vnl_vector_fixed< double, 3 > point, double rx, double ry, double rz, double tx, double ty, double tz)
-{
-  rx = rx*itk::Math::pi/180;
-  ry = ry*itk::Math::pi/180;
-  rz = rz*itk::Math::pi/180;
-
-  vnl_matrix_fixed< double, 3, 3 > rotX; rotX.set_identity();
-  rotX[1][1] = cos(rx);
-  rotX[2][2] = rotX[1][1];
-  rotX[1][2] = -sin(rx);
-  rotX[2][1] = -rotX[1][2];
-
-  vnl_matrix_fixed< double, 3, 3 > rotY; rotY.set_identity();
-  rotY[0][0] = cos(ry);
-  rotY[2][2] = rotY[0][0];
-  rotY[0][2] = sin(ry);
-  rotY[2][0] = -rotY[0][2];
-
-  vnl_matrix_fixed< double, 3, 3 > rotZ; rotZ.set_identity();
-  rotZ[0][0] = cos(rz);
-  rotZ[1][1] = rotZ[0][0];
-  rotZ[0][1] = -sin(rz);
-  rotZ[1][0] = -rotZ[0][1];
-
-  vnl_matrix_fixed< double, 3, 3 > rot = rotZ*rotY*rotX;
-
-  mitk::BaseGeometry::Pointer geom = this->GetGeometry();
-  mitk::Point3D center = geom->GetCenter();
-
-  point[0] -= center[0];
-  point[1] -= center[1];
-  point[2] -= center[2];
-  point = rot*point;
-  point[0] += center[0]+tx;
-  point[1] += center[1]+ty;
-  point[2] += center[2]+tz;
-  itk::Point<float, 3> out; out[0] = point[0]; out[1] = point[1]; out[2] = point[2];
-  return out;
-}
-
-
 void mitk::FiberBundle::TransformFibers(itk::ScalableAffineTransform< mitk::ScalarType >::Pointer transform)
 {
   vtkSmartPointer<vtkPoints> vtkNewPoints = vtkSmartPointer<vtkPoints>::New();
   vtkSmartPointer<vtkCellArray> vtkNewCells = vtkSmartPointer<vtkCellArray>::New();
 
-  for (int i=0; i<m_NumFibers; i++)
+  for (unsigned int i=0; i<m_NumFibers; i++)
   {
     vtkCell* cell = m_FiberPolyData->GetCell(i);
-    int numPoints = cell->GetNumberOfPoints();
+    auto numPoints = cell->GetNumberOfPoints();
     vtkPoints* points = cell->GetPoints();
 
     vtkSmartPointer<vtkPolyLine> container = vtkSmartPointer<vtkPolyLine>::New();
     for (int j=0; j<numPoints; j++)
     {
-      itk::Point<float, 3> p = GetItkPoint(points->GetPoint(j));
+      itk::Point<float, 3> p =mitk::imv::GetItkPoint(points->GetPoint(j));
       p = transform->TransformPoint(p);
       vtkIdType id = vtkNewPoints->InsertNextPoint(p.GetDataPointer());
       container->GetPointIds()->InsertNextId(id);
@@ -1708,29 +1648,7 @@ void mitk::FiberBundle::TransformFibers(itk::ScalableAffineTransform< mitk::Scal
 
 void mitk::FiberBundle::TransformFibers(double rx, double ry, double rz, double tx, double ty, double tz)
 {
-  rx = rx*itk::Math::pi/180;
-  ry = ry*itk::Math::pi/180;
-  rz = rz*itk::Math::pi/180;
-
-  vnl_matrix_fixed< double, 3, 3 > rotX; rotX.set_identity();
-  rotX[1][1] = cos(rx);
-  rotX[2][2] = rotX[1][1];
-  rotX[1][2] = -sin(rx);
-  rotX[2][1] = -rotX[1][2];
-
-  vnl_matrix_fixed< double, 3, 3 > rotY; rotY.set_identity();
-  rotY[0][0] = cos(ry);
-  rotY[2][2] = rotY[0][0];
-  rotY[0][2] = sin(ry);
-  rotY[2][0] = -rotY[0][2];
-
-  vnl_matrix_fixed< double, 3, 3 > rotZ; rotZ.set_identity();
-  rotZ[0][0] = cos(rz);
-  rotZ[1][1] = rotZ[0][0];
-  rotZ[0][1] = -sin(rz);
-  rotZ[1][0] = -rotZ[0][1];
-
-  vnl_matrix_fixed< double, 3, 3 > rot = rotZ*rotY*rotX;
+  vnl_matrix_fixed< double, 3, 3 > rot = mitk::imv::GetRotationMatrixVnl(rx, ry, rz);
 
   mitk::BaseGeometry::Pointer geom = this->GetGeometry();
   mitk::Point3D center = geom->GetCenter();
@@ -1738,10 +1656,10 @@ void mitk::FiberBundle::TransformFibers(double rx, double ry, double rz, double 
   vtkSmartPointer<vtkPoints> vtkNewPoints = vtkSmartPointer<vtkPoints>::New();
   vtkSmartPointer<vtkCellArray> vtkNewCells = vtkSmartPointer<vtkCellArray>::New();
 
-  for (int i=0; i<m_NumFibers; i++)
+  for (unsigned int i=0; i<m_NumFibers; i++)
   {
     vtkCell* cell = m_FiberPolyData->GetCell(i);
-    int numPoints = cell->GetNumberOfPoints();
+    auto numPoints = cell->GetNumberOfPoints();
     vtkPoints* points = cell->GetPoints();
 
     vtkSmartPointer<vtkPolyLine> container = vtkSmartPointer<vtkPolyLine>::New();
@@ -1798,10 +1716,10 @@ void mitk::FiberBundle::RotateAroundAxis(double x, double y, double z)
   vtkSmartPointer<vtkPoints> vtkNewPoints = vtkSmartPointer<vtkPoints>::New();
   vtkSmartPointer<vtkCellArray> vtkNewCells = vtkSmartPointer<vtkCellArray>::New();
 
-  for (int i=0; i<m_NumFibers; i++)
+  for (unsigned int i=0; i<m_NumFibers; i++)
   {
     vtkCell* cell = m_FiberPolyData->GetCell(i);
-    int numPoints = cell->GetNumberOfPoints();
+    auto numPoints = cell->GetNumberOfPoints();
     vtkPoints* points = cell->GetPoints();
 
     vtkSmartPointer<vtkPolyLine> container = vtkSmartPointer<vtkPolyLine>::New();
@@ -1839,11 +1757,11 @@ void mitk::FiberBundle::ScaleFibers(double x, double y, double z, bool subtractC
   vtkSmartPointer<vtkPoints> vtkNewPoints = vtkSmartPointer<vtkPoints>::New();
   vtkSmartPointer<vtkCellArray> vtkNewCells = vtkSmartPointer<vtkCellArray>::New();
 
-  for (int i=0; i<m_NumFibers; i++)
+  for (unsigned int i=0; i<m_NumFibers; i++)
   {
     ++disp ;
     vtkCell* cell = m_FiberPolyData->GetCell(i);
-    int numPoints = cell->GetNumberOfPoints();
+    auto numPoints = cell->GetNumberOfPoints();
     vtkPoints* points = cell->GetPoints();
 
     vtkSmartPointer<vtkPolyLine> container = vtkSmartPointer<vtkPolyLine>::New();
@@ -1878,10 +1796,10 @@ void mitk::FiberBundle::TranslateFibers(double x, double y, double z)
   vtkSmartPointer<vtkPoints> vtkNewPoints = vtkSmartPointer<vtkPoints>::New();
   vtkSmartPointer<vtkCellArray> vtkNewCells = vtkSmartPointer<vtkCellArray>::New();
 
-  for (int i=0; i<m_NumFibers; i++)
+  for (unsigned int i=0; i<m_NumFibers; i++)
   {
     vtkCell* cell = m_FiberPolyData->GetCell(i);
-    int numPoints = cell->GetNumberOfPoints();
+    auto numPoints = cell->GetNumberOfPoints();
     vtkPoints* points = cell->GetPoints();
 
     vtkSmartPointer<vtkPolyLine> container = vtkSmartPointer<vtkPolyLine>::New();
@@ -1914,11 +1832,11 @@ void mitk::FiberBundle::MirrorFibers(unsigned int axis)
   vtkSmartPointer<vtkPoints> vtkNewPoints = vtkSmartPointer<vtkPoints>::New();
   vtkSmartPointer<vtkCellArray> vtkNewCells = vtkSmartPointer<vtkCellArray>::New();
 
-  for (int i=0; i<m_NumFibers; i++)
+  for (unsigned int i=0; i<m_NumFibers; i++)
   {
     ++disp;
     vtkCell* cell = m_FiberPolyData->GetCell(i);
-    int numPoints = cell->GetNumberOfPoints();
+    auto numPoints = cell->GetNumberOfPoints();
     vtkPoints* points = cell->GetPoints();
 
     vtkSmartPointer<vtkPolyLine> container = vtkSmartPointer<vtkPolyLine>::New();
@@ -1944,12 +1862,12 @@ void mitk::FiberBundle::RemoveDir(vnl_vector_fixed<double,3> dir, double thresho
   vtkSmartPointer<vtkPoints> vtkNewPoints = vtkSmartPointer<vtkPoints>::New();
   vtkSmartPointer<vtkCellArray> vtkNewCells = vtkSmartPointer<vtkCellArray>::New();
 
-  boost::progress_display disp(m_FiberPolyData->GetNumberOfCells());
+  boost::progress_display disp(static_cast<unsigned long>(m_FiberPolyData->GetNumberOfCells()));
   for (int i=0; i<m_FiberPolyData->GetNumberOfCells(); i++)
   {
     ++disp ;
     vtkCell* cell = m_FiberPolyData->GetCell(i);
-    int numPoints = cell->GetNumberOfPoints();
+    auto numPoints = cell->GetNumberOfPoints();
     vtkPoints* points = cell->GetPoints();
 
     // calculate curvatures
@@ -2010,12 +1928,12 @@ bool mitk::FiberBundle::ApplyCurvatureThreshold(float minRadius, bool deleteFibe
   vtkSmartPointer<vtkCellArray> vtkNewCells = vtkSmartPointer<vtkCellArray>::New();
 
   MITK_INFO << "Applying curvature threshold";
-  boost::progress_display disp(m_FiberPolyData->GetNumberOfCells());
+  boost::progress_display disp(static_cast<unsigned long>(m_FiberPolyData->GetNumberOfCells()));
   for (int i=0; i<m_FiberPolyData->GetNumberOfCells(); i++)
   {
     ++disp ;
     vtkCell* cell = m_FiberPolyData->GetCell(i);
-    int numPoints = cell->GetNumberOfPoints();
+    auto numPoints = cell->GetNumberOfPoints();
     vtkPoints* points = cell->GetPoints();
 
     // calculate curvatures
@@ -2031,17 +1949,17 @@ bool mitk::FiberBundle::ApplyCurvatureThreshold(float minRadius, bool deleteFibe
 
       vnl_vector_fixed< float, 3 > v1, v2, v3;
 
-      v1[0] = p2[0]-p1[0];
-      v1[1] = p2[1]-p1[1];
-      v1[2] = p2[2]-p1[2];
+      v1[0] = static_cast<float>(p2[0]-p1[0]);
+      v1[1] = static_cast<float>(p2[1]-p1[1]);
+      v1[2] = static_cast<float>(p2[2]-p1[2]);
 
-      v2[0] = p3[0]-p2[0];
-      v2[1] = p3[1]-p2[1];
-      v2[2] = p3[2]-p2[2];
+      v2[0] = static_cast<float>(p3[0]-p2[0]);
+      v2[1] = static_cast<float>(p3[1]-p2[1]);
+      v2[2] = static_cast<float>(p3[2]-p2[2]);
 
-      v3[0] = p1[0]-p3[0];
-      v3[1] = p1[1]-p3[1];
-      v3[2] = p1[2]-p3[2];
+      v3[0] = static_cast<float>(p1[0]-p3[0]);
+      v3[1] = static_cast<float>(p1[1]-p3[1]);
+      v3[2] = static_cast<float>(p1[2]-p3[2]);
 
       float a = v1.magnitude();
       float b = v2.magnitude();
@@ -2101,11 +2019,11 @@ bool mitk::FiberBundle::RemoveShortFibers(float lengthInMM)
   float min = m_MaxFiberLength;
 
   boost::progress_display disp(m_NumFibers);
-  for (int i=0; i<m_NumFibers; i++)
+  for (unsigned int i=0; i<m_NumFibers; i++)
   {
     ++disp;
     vtkCell* cell = m_FiberPolyData->GetCell(i);
-    int numPoints = cell->GetNumberOfPoints();
+    auto numPoints = cell->GetNumberOfPoints();
     vtkPoints* points = cell->GetPoints();
 
     if (m_FiberLengths.at(i)>=lengthInMM)
@@ -2146,11 +2064,11 @@ bool mitk::FiberBundle::RemoveLongFibers(float lengthInMM)
 
   MITK_INFO << "Removing long fibers";
   boost::progress_display disp(m_NumFibers);
-  for (int i=0; i<m_NumFibers; i++)
+  for (unsigned int i=0; i<m_NumFibers; i++)
   {
     ++disp;
     vtkCell* cell = m_FiberPolyData->GetCell(i);
-    int numPoints = cell->GetNumberOfPoints();
+    auto numPoints = cell->GetNumberOfPoints();
     vtkPoints* points = cell->GetPoints();
 
     if (m_FiberLengths.at(i)<=lengthInMM)
@@ -2196,22 +2114,22 @@ void mitk::FiberBundle::ResampleSpline(float pointDistance, double tension, doub
 
   boost::progress_display disp(m_NumFibers);
 #pragma omp parallel for
-  for (int i=0; i<m_NumFibers; i++)
+  for (int i=0; i<static_cast<int>(m_NumFibers); i++)
   {
     vtkSmartPointer<vtkPoints> newPoints = vtkSmartPointer<vtkPoints>::New();
     float length = 0;
 #pragma omp critical
     {
-      length = m_FiberLengths.at(i);
+      length = m_FiberLengths.at(static_cast<unsigned int>(i));
       ++disp;
       vtkCell* cell = m_FiberPolyData->GetCell(i);
-      int numPoints = cell->GetNumberOfPoints();
+      auto numPoints = cell->GetNumberOfPoints();
       vtkPoints* points = cell->GetPoints();
       for (int j=0; j<numPoints; j++)
         newPoints->InsertNextPoint(points->GetPoint(j));
     }
 
-    int sampling = std::ceil(length/pointDistance);
+    int sampling = static_cast<int>(std::ceil(length/pointDistance));
 
     vtkSmartPointer<vtkKochanekSpline> xSpline = vtkSmartPointer<vtkKochanekSpline>::New();
     vtkSmartPointer<vtkKochanekSpline> ySpline = vtkSmartPointer<vtkKochanekSpline>::New();
@@ -2246,7 +2164,7 @@ void mitk::FiberBundle::ResampleSpline(float pointDistance, double tension, doub
         smoothLine->GetPointIds()->InsertNextId(id);
       }
 
-      resampled_streamlines[i] = smoothLine;
+      resampled_streamlines[static_cast<unsigned long>(i)] = smoothLine;
     }
   }
 
@@ -2266,9 +2184,9 @@ void mitk::FiberBundle::ResampleSpline(float pointDistance)
   ResampleSpline(pointDistance, 0, 0, 0 );
 }
 
-unsigned long mitk::FiberBundle::GetNumberOfPoints() const
+unsigned int mitk::FiberBundle::GetNumberOfPoints() const
 {
-  unsigned long points = 0;
+  unsigned int points = 0;
   for (int i=0; i<m_FiberPolyData->GetNumberOfCells(); i++)
   {
     vtkCell* cell = m_FiberPolyData->GetCell(i);
@@ -2283,14 +2201,14 @@ void mitk::FiberBundle::Compress(float error)
   vtkSmartPointer<vtkCellArray> vtkNewCells = vtkSmartPointer<vtkCellArray>::New();
 
   MITK_INFO << "Compressing fibers";
-  unsigned long numRemovedPoints = 0;
-  boost::progress_display disp(m_FiberPolyData->GetNumberOfCells());
+  unsigned int numRemovedPoints = 0;
+  boost::progress_display disp(static_cast<unsigned long>(m_FiberPolyData->GetNumberOfCells()));
   vtkSmartPointer<vtkFloatArray> newFiberWeights = vtkSmartPointer<vtkFloatArray>::New();
   newFiberWeights->SetName("FIBER_WEIGHTS");
   newFiberWeights->SetNumberOfValues(m_NumFibers);
 
 #pragma omp parallel for
-  for (int i=0; i<m_FiberPolyData->GetNumberOfCells(); i++)
+  for (int i=0; i<static_cast<int>(m_FiberPolyData->GetNumberOfCells()); i++)
   {
 
     std::vector< vnl_vector_fixed< double, 3 > > vertices;
@@ -2301,7 +2219,7 @@ void mitk::FiberBundle::Compress(float error)
       ++disp;
       weight = m_FiberWeights->GetValue(i);
       vtkCell* cell = m_FiberPolyData->GetCell(i);
-      int numPoints = cell->GetNumberOfPoints();
+      auto numPoints = cell->GetNumberOfPoints();
       vtkPoints* points = cell->GetPoints();
 
       for (int j=0; j<numPoints; j++)
@@ -2315,19 +2233,19 @@ void mitk::FiberBundle::Compress(float error)
     }
 
     // calculate curvatures
-    int numPoints = vertices.size();
+    auto numPoints = vertices.size();
     std::vector< int > removedPoints; removedPoints.resize(numPoints, 0);
     removedPoints[0]=-1; removedPoints[numPoints-1]=-1;
 
     vtkSmartPointer<vtkPolyLine> container = vtkSmartPointer<vtkPolyLine>::New();
-    int remCounter = 0;
+    unsigned int remCounter = 0;
 
     bool pointFound = true;
     while (pointFound)
     {
       pointFound = false;
-      double minError = error;
-      int removeIndex = -1;
+      double minError = static_cast<double>(error);
+      unsigned int removeIndex = 0;
 
       for (unsigned int j=0; j<vertices.size(); j++)
       {
@@ -2337,20 +2255,20 @@ void mitk::FiberBundle::Compress(float error)
 
           int validP = -1;
           vnl_vector_fixed< double, 3 > pred;
-          for (int k=j-1; k>=0; k--)
-            if (removedPoints[k]<=0)
+          for (int k=static_cast<int>(j)-1; k>=0; k--)
+            if (removedPoints[static_cast<unsigned int>(k)]<=0)
             {
-              pred = vertices.at(k);
+              pred = vertices.at(static_cast<unsigned int>(k));
               validP = k;
               break;
             }
           int validS = -1;
           vnl_vector_fixed< double, 3 > succ;
-          for (int k=j+1; k<numPoints; k++)
+          for (unsigned int k=j+1; k<numPoints; k++)
             if (removedPoints[k]<=0)
             {
               succ = vertices.at(k);
-              validS = k;
+              validS = static_cast<int>(k);
               break;
             }
 
@@ -2379,7 +2297,7 @@ void mitk::FiberBundle::Compress(float error)
       }
     }
 
-    for (int j=0; j<numPoints; j++)
+    for (unsigned int j=0; j<numPoints; j++)
     {
       if (removedPoints[j]<=0)
       {
@@ -2428,22 +2346,19 @@ void mitk::FiberBundle::ResampleToNumPoints(unsigned int targetPoints)
     newFiberWeights->SetNumberOfValues(m_NumFibers);
 
     unequal_fibs = false;
-//#pragma omp parallel for
-    for (int i=0; i<m_FiberPolyData->GetNumberOfCells(); i++)
+    for (unsigned int i=0; i<m_FiberPolyData->GetNumberOfCells(); i++)
     {
 
       std::vector< vnl_vector_fixed< double, 3 > > vertices;
       float weight = 1;
-
       double seg_len = 0;
 
-//#pragma omp critical
       {
         weight = m_FiberWeights->GetValue(i);
         vtkCell* cell = m_FiberPolyData->GetCell(i);
-        int numPoints = cell->GetNumberOfPoints();
-        if ((unsigned int)numPoints!=targetPoints)
-          seg_len = this->GetFiberLength(i)/(targetPoints-1);;
+        auto numPoints = cell->GetNumberOfPoints();
+        if (numPoints!=targetPoints)
+          seg_len = static_cast<double>(this->GetFiberLength(i)/(targetPoints-1));
         vtkPoints* points = cell->GetPoints();
 
         for (int j=0; j<numPoints; j++)
@@ -2459,7 +2374,6 @@ void mitk::FiberBundle::ResampleToNumPoints(unsigned int targetPoints)
       vtkSmartPointer<vtkPolyLine> container = vtkSmartPointer<vtkPolyLine>::New();
       vnl_vector_fixed< double, 3 > lastV = vertices.at(0);
 
-//#pragma omp critical
       {
         vtkIdType id = vtkNewPoints->InsertNextPoint(lastV.data_block());
         container->GetPointIds()->InsertNextId(id);
@@ -2507,7 +2421,7 @@ void mitk::FiberBundle::ResampleToNumPoints(unsigned int targetPoints)
           }
           lastV = newV;
         }
-        else if ( (j==vertices.size()-1 && new_dist>0.0001) || seg_len==0)
+        else if ( (j==vertices.size()-1 && new_dist>0.0001) || seg_len<=0.0000001)
         {
 //#pragma omp critical
           {
@@ -2543,16 +2457,16 @@ void mitk::FiberBundle::ResampleLinear(double pointDistance)
   vtkSmartPointer<vtkCellArray> vtkNewCells = vtkSmartPointer<vtkCellArray>::New();
 
   MITK_INFO << "Resampling fibers (linear)";
-  boost::progress_display disp(m_FiberPolyData->GetNumberOfCells());
+  boost::progress_display disp(static_cast<unsigned long>(m_FiberPolyData->GetNumberOfCells()));
   vtkSmartPointer<vtkFloatArray> newFiberWeights = vtkSmartPointer<vtkFloatArray>::New();
   newFiberWeights->SetName("FIBER_WEIGHTS");
   newFiberWeights->SetNumberOfValues(m_NumFibers);
 
   std::vector< vtkSmartPointer<vtkPolyLine> > resampled_streamlines;
-  resampled_streamlines.resize(m_FiberPolyData->GetNumberOfCells());
+  resampled_streamlines.resize(static_cast<unsigned long>(m_FiberPolyData->GetNumberOfCells()));
 
 #pragma omp parallel for
-  for (int i=0; i<m_FiberPolyData->GetNumberOfCells(); i++)
+  for (int i=0; i<static_cast<int>(m_FiberPolyData->GetNumberOfCells()); i++)
   {
 
     std::vector< vnl_vector_fixed< double, 3 > > vertices;
@@ -2561,7 +2475,7 @@ void mitk::FiberBundle::ResampleLinear(double pointDistance)
     {
       ++disp;
       vtkCell* cell = m_FiberPolyData->GetCell(i);
-      int numPoints = cell->GetNumberOfPoints();
+      auto numPoints = cell->GetNumberOfPoints();
       vtkPoints* points = cell->GetPoints();
 
       for (int j=0; j<numPoints; j++)
@@ -2637,7 +2551,7 @@ void mitk::FiberBundle::ResampleLinear(double pointDistance)
 
 #pragma omp critical
     {
-      resampled_streamlines[i] = container;
+      resampled_streamlines[static_cast<unsigned int>(i)] = container;
     }
   }
 
@@ -2671,14 +2585,14 @@ bool mitk::FiberBundle::Equals(mitk::FiberBundle* fib, double eps)
     return false;
   }
 
-  for (int i=0; i<m_NumFibers; i++)
+  for (unsigned int i=0; i<m_NumFibers; i++)
   {
     vtkCell* cell = m_FiberPolyData->GetCell(i);
-    int numPoints = cell->GetNumberOfPoints();
+    auto numPoints = cell->GetNumberOfPoints();
     vtkPoints* points = cell->GetPoints();
 
     vtkCell* cell2 = fib->GetFiberPolyData()->GetCell(i);
-    int numPoints2 = cell2->GetNumberOfPoints();
+    auto numPoints2 = cell2->GetNumberOfPoints();
     vtkPoints* points2 = cell2->GetPoints();
 
     if (numPoints2!=numPoints)
@@ -2731,13 +2645,13 @@ void mitk::FiberBundle::PrintSelf(std::ostream &os, itk::Indent indent) const
 
     os << indent << "\nFiber weight statistics" << std::endl;
     os << indent << "Min: " << weights.front() << std::endl;
-    os << indent << "1% quantile: " << weights.at(weights.size()*0.01) << std::endl;
-    os << indent << "5% quantile: " << weights.at(weights.size()*0.05) << std::endl;
-    os << indent << "25% quantile: " << weights.at(weights.size()*0.25) << std::endl;
-    os << indent << "Median: " << weights.at(weights.size()*0.5) << std::endl;
-    os << indent << "75% quantile: " << weights.at(weights.size()*0.75) << std::endl;
-    os << indent << "95% quantile: " << weights.at(weights.size()*0.95) << std::endl;
-    os << indent << "99% quantile: " << weights.at(weights.size()*0.99) << std::endl;
+    os << indent << "1% quantile: " << weights.at(static_cast<unsigned long>(weights.size()*0.01)) << std::endl;
+    os << indent << "5% quantile: " << weights.at(static_cast<unsigned long>(weights.size()*0.05)) << std::endl;
+    os << indent << "25% quantile: " << weights.at(static_cast<unsigned long>(weights.size()*0.25)) << std::endl;
+    os << indent << "Median: " << weights.at(static_cast<unsigned long>(weights.size()*0.5)) << std::endl;
+    os << indent << "75% quantile: " << weights.at(static_cast<unsigned long>(weights.size()*0.75)) << std::endl;
+    os << indent << "95% quantile: " << weights.at(static_cast<unsigned long>(weights.size()*0.95)) << std::endl;
+    os << indent << "99% quantile: " << weights.at(static_cast<unsigned long>(weights.size()*0.99)) << std::endl;
     os << indent << "Max: " << weights.back() << std::endl;
   }
   else

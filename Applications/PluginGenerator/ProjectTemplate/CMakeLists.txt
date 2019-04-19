@@ -126,7 +126,7 @@ endif()
 set(${PROJECT_NAME}_MODULES_PACKAGE_DEPENDS_DIR "${PROJECT_SOURCE_DIR}/CMake/PackageDepends")
 set(MODULES_PACKAGE_DEPENDS_DIRS ${${PROJECT_NAME}_MODULES_PACKAGE_DEPENDS_DIR})
 
-find_package(MITK 2016.11.00 REQUIRED)
+find_package(MITK 2018.04.99 REQUIRED)
 
 if(COMMAND mitkFunctionCheckMitkCompatibility)
   mitkFunctionCheckMitkCompatibility(VERSIONS MITK_VERSION_PLUGIN_SYSTEM 1 REQUIRED)
@@ -178,7 +178,7 @@ mitkFunctionGetVersion(${PROJECT_SOURCE_DIR} ${PROJECT_NAME})
 # These should be set before any MITK install macros are used
 #-----------------------------------------------------------------------------
 
-# on Mac OSX all CTK plugins get copied into every
+# on macOS all CTK plugins get copied into every
 # application bundle (.app directory) specified here
 set(MACOSX_BUNDLE_NAMES)
 if(APPLE)

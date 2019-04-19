@@ -30,21 +30,7 @@ See LICENSE.txt or http://www.mitk.org for details.
 #include <mitkCoreObjectFactory.h>
 #include <mitkPreferenceListReaderOptionsFunctor.h>
 #include <mitkShImage.h>
-
-template<int shOrder>
-typename itk::ShCoefficientImageImporter< float, shOrder >::OdfImageType::Pointer TemplatedConvertShCoeffs(mitk::Image::Pointer mitkImg)
-{
-  typedef itk::ShToOdfImageFilter< float, shOrder > ShConverterType;
-
-  typename ShConverterType::InputImageType::Pointer itkvol = ShConverterType::InputImageType::New();
-  mitk::CastToItkImage(mitkImg, itkvol);
-
-  typename ShConverterType::Pointer converter = ShConverterType::New();
-  converter->SetInput(itkvol);
-  converter->Update();
-
-  return converter->GetOutput();
-}
+#include <mitkDiffusionFunctionCollection.h>
 
 /*!
 \brief Perform global fiber tractography (Gibbs tractography)
@@ -59,18 +45,18 @@ int main(int argc, char* argv[])
   parser.setContributor("MIC");
 
   parser.setArgumentPrefix("--", "-");
-  parser.addArgument("input", "i", mitkCommandLineParser::InputFile, "Input:", "input image (tensor, ODF or SH-coefficient image)", us::Any(), false);
-  parser.addArgument("parameters", "p", mitkCommandLineParser::InputFile, "Parameters:", "parameter file (.gtp)", us::Any(), false);
-  parser.addArgument("mask", "m", mitkCommandLineParser::InputFile, "Mask:", "binary mask image");
-  parser.addArgument("outFile", "o", mitkCommandLineParser::OutputFile, "Output:", "output fiber bundle (.fib)", us::Any(), false);
+  parser.addArgument("", "i", mitkCommandLineParser::String, "Input:", "input image (tensor, ODF or SH-coefficient image)", us::Any(), false, false, false, mitkCommandLineParser::Input);
+  parser.addArgument("", "o", mitkCommandLineParser::String, "Output:", "output tractogram", us::Any(), false, false, false, mitkCommandLineParser::Output);
+  parser.addArgument("parameters", "", mitkCommandLineParser::String, "Parameters:", "parameter file (.gtp)", us::Any(), false, false, false, mitkCommandLineParser::Input);
+  parser.addArgument("mask", "", mitkCommandLineParser::String, "Mask:", "binary mask image", us::Any(), false, false, false, mitkCommandLineParser::Input);
 
   std::map<std::string, us::Any> parsedArgs = parser.parseArguments(argc, argv);
   if (parsedArgs.size()==0)
     return EXIT_FAILURE;
 
-  std::string inFileName = us::any_cast<std::string>(parsedArgs["input"]);
+  std::string inFileName = us::any_cast<std::string>(parsedArgs["i"]);
   std::string paramFileName = us::any_cast<std::string>(parsedArgs["parameters"]);
-  std::string outFileName = us::any_cast<std::string>(parsedArgs["outFile"]);
+  std::string outFileName = us::any_cast<std::string>(parsedArgs["o"]);
 
   try
   {
@@ -102,31 +88,8 @@ int main(int argc, char* argv[])
     }
     else if ( dynamic_cast<mitk::ShImage*>(mitkImage.GetPointer()) )
     {
-      mitk::ShImage::Pointer shImage = dynamic_cast<mitk::ShImage*>(mitkImage.GetPointer());
-
-      switch (shImage->ShOrder())
-      {
-      case 2:
-        gibbsTracker->SetOdfImage(TemplatedConvertShCoeffs<2>(mitkImage));
-        break;
-      case 4:
-        gibbsTracker->SetOdfImage(TemplatedConvertShCoeffs<4>(mitkImage));
-        break;
-      case 6:
-        gibbsTracker->SetOdfImage(TemplatedConvertShCoeffs<6>(mitkImage));
-        break;
-      case 8:
-        gibbsTracker->SetOdfImage(TemplatedConvertShCoeffs<8>(mitkImage));
-        break;
-      case 10:
-        gibbsTracker->SetOdfImage(TemplatedConvertShCoeffs<10>(mitkImage));
-        break;
-      case 12:
-        gibbsTracker->SetOdfImage(TemplatedConvertShCoeffs<12>(mitkImage));
-        break;
-      default:
-        std::cout << "SH-order " << shImage->ShOrder() << " not supported";
-      }
+      mitk::Image::Pointer shImage = dynamic_cast<mitk::Image*>(mitkImage.GetPointer());
+      gibbsTracker->SetOdfImage(mitk::convert::GetItkOdfFromShImage(shImage));
     }
     else
       return EXIT_FAILURE;

@@ -77,7 +77,7 @@ void FiberExtractionFilter< PixelType >::SetRoiImageNames(const std::vector< std
 }
 
 template< class PixelType >
-mitk::FiberBundle::Pointer FiberExtractionFilter< PixelType >::CreateFib(std::vector< long >& ids)
+mitk::FiberBundle::Pointer FiberExtractionFilter< PixelType >::CreateFib(std::vector< unsigned int >& ids)
 {
   vtkSmartPointer<vtkFloatArray> weights = vtkSmartPointer<vtkFloatArray>::New();
   vtkSmartPointer<vtkPolyData> pTmp = m_InputFiberBundle->GeneratePolyDataByIds(ids, weights);
@@ -115,13 +115,13 @@ void FiberExtractionFilter< PixelType >::ExtractOverlap(mitk::FiberBundle::Point
   MITK_INFO << "Extracting fibers (min. overlap " << m_OverlapFraction << ")";
   vtkSmartPointer<vtkPolyData> polydata = fib->GetFiberPolyData();
 
-  std::vector< std::vector< long > > positive_ids;  // one ID vector per ROI
+  std::vector< std::vector< unsigned int > > positive_ids;  // one ID vector per ROI
   positive_ids.resize(m_RoiImages.size());
 
-  std::vector< long > negative_ids; // fibers not overlapping with ANY mask
+  std::vector< unsigned int > negative_ids; // fibers not overlapping with ANY mask
 
   boost::progress_display disp(m_InputFiberBundle->GetNumFibers());
-  for (int i=0; i<m_InputFiberBundle->GetNumFibers(); i++)
+  for (unsigned int i=0; i<m_InputFiberBundle->GetNumFibers(); i++)
   {
     ++disp;
     vtkCell* cell = polydata->GetCell(i);
@@ -211,13 +211,13 @@ void FiberExtractionFilter< PixelType >::ExtractEndpoints(mitk::FiberBundle::Poi
   MITK_INFO << "Extracting fibers (endpoints in mask)";
   vtkSmartPointer<vtkPolyData> polydata = fib->GetFiberPolyData();
 
-  std::vector< std::vector< long > > positive_ids;  // one ID vector per ROI
+  std::vector< std::vector< unsigned int > > positive_ids;  // one ID vector per ROI
   positive_ids.resize(m_RoiImages.size());
 
-  std::vector< long > negative_ids; // fibers not overlapping with ANY mask
+  std::vector< unsigned int > negative_ids; // fibers not overlapping with ANY mask
 
   boost::progress_display disp(m_InputFiberBundle->GetNumFibers());
-  for (int i=0; i<m_InputFiberBundle->GetNumFibers(); i++)
+  for (unsigned int i=0; i<m_InputFiberBundle->GetNumFibers(); i++)
   {
     ++disp;
     vtkCell* cell = polydata->GetCell(i);
@@ -236,8 +236,7 @@ void FiberExtractionFilter< PixelType >::ExtractEndpoints(mitk::FiberBundle::Poi
         // check first fiber point
         {
           double* p = points->GetPoint(0);
-          itk::Point<float, 3> itkP;
-          itkP[0] = p[0]; itkP[1] = p[1]; itkP[2] = p[2];
+          itk::Point<float, 3> itkP = mitk::imv::GetItkPoint(p);
 
           if ( IsPositive(itkP) )
             inside++;
@@ -246,8 +245,7 @@ void FiberExtractionFilter< PixelType >::ExtractEndpoints(mitk::FiberBundle::Poi
         // check second fiber point
         {
           double* p = points->GetPoint(numPoints-1);
-          itk::Point<float, 3> itkP;
-          itkP[0] = p[0]; itkP[1] = p[1]; itkP[2] = p[2];
+          itk::Point<float, 3> itkP = mitk::imv::GetItkPoint(p);
 
           if ( IsPositive(itkP) )
             inside++;
@@ -299,12 +297,12 @@ void FiberExtractionFilter< PixelType >::ExtractLabels(mitk::FiberBundle::Pointe
   MITK_INFO << "Extracting fibers by labels";
   vtkSmartPointer<vtkPolyData> polydata = fib->GetFiberPolyData();
 
-  std::map< std::string, std::vector< long > > positive_ids;
+  std::map< std::string, std::vector< unsigned int > > positive_ids;
 
-  std::vector< long > negative_ids; // fibers not overlapping with ANY label
+  std::vector< unsigned int > negative_ids; // fibers not overlapping with ANY label
 
   boost::progress_display disp(m_InputFiberBundle->GetNumFibers());
-  for (int i=0; i<m_InputFiberBundle->GetNumFibers(); i++)
+  for (unsigned int i=0; i<m_InputFiberBundle->GetNumFibers(); i++)
   {
     ++disp;
     vtkCell* cell = polydata->GetCell(i);
@@ -321,13 +319,11 @@ void FiberExtractionFilter< PixelType >::ExtractLabels(mitk::FiberBundle::Pointe
         int inside = 0;
 
         double* p1 = points->GetPoint(0);
-        itk::Point<float, 3> itkP1;
-        itkP1[0] = p1[0]; itkP1[1] = p1[1]; itkP1[2] = p1[2];
+        itk::Point<float, 3> itkP1 = mitk::imv::GetItkPoint(p1);
         short label1 = mitk::imv::GetImageValue<PixelType>(itkP1, false, m_Interpolator);
 
         double* p2 = points->GetPoint(numPoints-1);
-        itk::Point<float, 3> itkP2;
-        itkP2[0] = p2[0]; itkP2[1] = p2[1]; itkP2[2] = p2[2];
+        itk::Point<float, 3> itkP2 = mitk::imv::GetItkPoint(p2);
         short label2 = mitk::imv::GetImageValue<PixelType>(itkP2, false, m_Interpolator);
 
         if (!m_Labels.empty())  // extract fibers from all pairwise label combinations
@@ -409,7 +405,7 @@ void FiberExtractionFilter< PixelType >::ExtractLabels(mitk::FiberBundle::Pointe
           {
             positive = true;
             if ( positive_ids.count(key)==0 )
-              positive_ids.insert( std::pair< std::string, std::vector< long > >( key, {i}) );
+              positive_ids.insert( std::pair< std::string, std::vector< unsigned int > >( key, {i}) );
             else
               positive_ids[key].push_back(i);
           }
@@ -420,7 +416,7 @@ void FiberExtractionFilter< PixelType >::ExtractLabels(mitk::FiberBundle::Pointe
           {
             positive = true;
             if ( positive_ids.count(key)==0 )
-              positive_ids.insert( std::pair< std::string, std::vector< long > >( key, {i}) );
+              positive_ids.insert( std::pair< std::string, std::vector< unsigned int > >( key, {i}) );
             else
               positive_ids[key].push_back(i);
           }

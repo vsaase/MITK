@@ -22,8 +22,6 @@ See LICENSE.txt or http://www.mitk.org for details.
 #include <mitkPreferenceListReaderOptionsFunctor.h>
 #include <itksys/SystemTools.hxx>
 
-
-
 int main(int argc, char* argv[])
 {
   mitkCommandLineParser parser;
@@ -34,16 +32,16 @@ int main(int argc, char* argv[])
   parser.setContributor("MIC");
 
   parser.setArgumentPrefix("--", "-");
-  parser.addArgument("in", "i", mitkCommandLineParser::InputFile, "Input:", "input image", us::Any(), false);
-  parser.addArgument("out", "o", mitkCommandLineParser::OutputFile, "Output:", "output image", us::Any(), false);
+  parser.addArgument("", "i", mitkCommandLineParser::String, "Input:", "input image", us::Any(), false, false, false, mitkCommandLineParser::Input);
+  parser.addArgument("", "o", mitkCommandLineParser::String, "Output:", "output image", us::Any(), false, false, false, mitkCommandLineParser::Output);
 
   std::map<std::string, us::Any> parsedArgs = parser.parseArguments(argc, argv);
   if (parsedArgs.size()==0)
     return EXIT_FAILURE;
 
   // mandatory arguments
-  std::string imageName = us::any_cast<std::string>(parsedArgs["in"]);
-  std::string outImage = us::any_cast<std::string>(parsedArgs["out"]);
+  std::string imageName = us::any_cast<std::string>(parsedArgs["i"]);
+  std::string outImage = us::any_cast<std::string>(parsedArgs["o"]);
 
   try
   {
@@ -57,7 +55,7 @@ int main(int argc, char* argv[])
 
     std::string ext = itksys::SystemTools::GetFilenameExtension(outImage);
     if (ext==".nii" || ext==".nii.gz")
-      mitk::IOUtil::Save(out_image, "application/vnd.mitk.nii.gz", outImage);
+      mitk::IOUtil::Save(out_image, "DWI_NIFTI", outImage);
     else
       mitk::IOUtil::Save(out_image, outImage);
   }

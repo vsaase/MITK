@@ -44,8 +44,8 @@ int main(int argc, char* argv[])
   parser.setContributor("MIC");
 
   parser.setArgumentPrefix("--", "-");
-  parser.addArgument("input", "i", mitkCommandLineParser::String, "Input:", "input tractogram (.fib/.trk/.tck/.dcm)", us::Any(), false);
-  parser.addArgument("out", "o", mitkCommandLineParser::String, "Output:", "output tractogram", us::Any(), false);
+  parser.addArgument("", "i", mitkCommandLineParser::String, "Input:", "input tractogram (.fib/.trk/.tck/.dcm)", us::Any(), false);
+  parser.addArgument("", "o", mitkCommandLineParser::String, "Output:", "output tractogram", us::Any(), false);
 
   parser.addArgument("threshold", "", mitkCommandLineParser::Float, "Threshold:", "positive means ROI image value threshold", 0.05);
   parser.addArgument("overlap", "", mitkCommandLineParser::Float, "Overlap:", "positive means ROI image value threshold", 0.5);
@@ -55,8 +55,8 @@ int main(int argc, char* argv[])
   if (parsedArgs.size()==0)
     return EXIT_FAILURE;
 
-  std::string inFib = us::any_cast<std::string>(parsedArgs["input"]);
-  std::string outFib = us::any_cast<std::string>(parsedArgs["out"]);
+  std::string inFib = us::any_cast<std::string>(parsedArgs["i"]);
+  std::string outFib = us::any_cast<std::string>(parsedArgs["o"]);
 
   int min_fibers = 0;
   if (parsedArgs.count("min_fibers"))
@@ -66,7 +66,7 @@ int main(int argc, char* argv[])
   if (parsedArgs.count("overlap"))
     overlap = us::any_cast<float>(parsedArgs["overlap"]);
 
-  float threshold = 0.05;
+  float threshold = 0.05f;
   if (parsedArgs.count("threshold"))
     threshold = us::any_cast<float>(parsedArgs["threshold"]);
 
@@ -88,7 +88,7 @@ int main(int argc, char* argv[])
     extractor->SetThreshold(threshold);
     extractor->SetNoNegatives(true);
     extractor->Update();
-    if (extractor->GetPositives().at(0)->GetNumFibers()>=min_fibers)
+    if (extractor->GetPositives().at(0)->GetNumFibers() >= static_cast<unsigned int>(min_fibers))
       mitk::IOUtil::Save(extractor->GetPositives().at(0), outFib);
   }
   catch (itk::ExceptionObject e)

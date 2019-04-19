@@ -40,11 +40,11 @@ int main(int argc, char* argv[])
   parser.setContributor("MIC");
 
   parser.setArgumentPrefix("--", "-");
-  parser.addArgument("", "i", mitkCommandLineParser::InputFile, "Input:", "input fiber bundle (.fib, .trk, .tck)", us::Any(), false);
-  parser.addArgument("ref_tracts", "", mitkCommandLineParser::StringList, "Ref. Tracts:", "reference tracts (.fib, .trk, .tck)", us::Any(), false);
-  parser.addArgument("ref_masks", "", mitkCommandLineParser::StringList, "Ref. Masks:", "reference bundle masks", us::Any());
+  parser.addArgument("", "i", mitkCommandLineParser::String, "Input:", "input fiber bundle (.fib, .trk, .tck)", us::Any(), false, false, false, mitkCommandLineParser::Input);
+  parser.addArgument("ref_tracts", "", mitkCommandLineParser::StringList, "Ref. Tracts:", "reference tracts (.fib, .trk, .tck)", us::Any(), false, false, false, mitkCommandLineParser::Input);
+  parser.addArgument("ref_masks", "", mitkCommandLineParser::StringList, "Ref. Masks:", "reference bundle masks", us::Any(), true, false, false, mitkCommandLineParser::Input);
 
-  parser.addArgument("", "o", mitkCommandLineParser::OutputDirectory, "Output:", "output root", us::Any(), false);
+  parser.addArgument("", "o", mitkCommandLineParser::String, "Output:", "output root", us::Any(), false, false, false, mitkCommandLineParser::Output);
   parser.addArgument("distance", "", mitkCommandLineParser::Int, "Distance:", "", 10);
   parser.addArgument("metric", "", mitkCommandLineParser::String, "Metric:", "EU_MEAN (default), EU_STD, EU_MAX");
   parser.addArgument("subsample", "", mitkCommandLineParser::Float, "Subsampling factor:", "Only use specified fraction of input fibers", 1.0);
@@ -83,7 +83,7 @@ int main(int argc, char* argv[])
     mitk::FiberBundle::Pointer fib = mitk::IOUtil::Load<mitk::FiberBundle>(in_fib);
 
     std::srand(0);
-    if (subsample<1.0)
+    if (subsample<1.0f)
       fib = fib->SubsampleFibers(subsample, true);
 
     mitk::FiberBundle::Pointer resampled_fib = fib->GetDeepCopy();
@@ -124,8 +124,11 @@ int main(int argc, char* argv[])
         }
 
         // segment tract
-        segmenter->SetFilterMask(ref_masks.at(c));
-        segmenter->SetOverlapThreshold(0.8);
+        if (c<ref_masks.size())
+        {
+          segmenter->SetFilterMask(ref_masks.at(c));
+          segmenter->SetOverlapThreshold(0.8f);
+        }
         segmenter->SetDistances(distances);
         segmenter->SetTractogram(resampled_fib);
         segmenter->SetMergeDuplicateThreshold(0.0);
@@ -138,7 +141,7 @@ int main(int argc, char* argv[])
           segmenter->SetMetrics({new mitk::ClusteringMetricEuclideanMax()});
         segmenter->Update();
 
-        std::vector< std::vector< long > > clusters = segmenter->GetOutFiberIndices();
+        std::vector< std::vector< unsigned int > > clusters = segmenter->GetOutFiberIndices();
         if (clusters.size()>0)
         {
           vtkSmartPointer<vtkFloatArray> weights = vtkSmartPointer<vtkFloatArray>::New();

@@ -14,6 +14,7 @@ set(MITK_MODULES
   MapperExt
   DICOMReader
   DICOMReaderServices
+  DICOMQI
   DICOMTesting
   SceneSerializationBase
   PlanarFigure
@@ -23,6 +24,7 @@ set(MITK_MODULES
   Gizmo
   GraphAlgorithms
   Multilabel
+  Chart
   ImageStatistics
   ContourModel
   SurfaceInterpolation
@@ -30,7 +32,7 @@ set(MITK_MODULES
   PlanarFigureSegmentation
   QtWidgets
   QtWidgetsExt
-  Chart
+  ImageStatisticsUI
   SegmentationUI
   MatchPointRegistration
   MatchPointRegistrationUI
@@ -69,12 +71,16 @@ set(MITK_MODULES
   BoundingShape
   RenderWindowManager
   RenderWindowManagerUI
+  SemanticRelations
+  SemanticRelationsUI
   CEST
   BasicImageProcessing
   ModelFit
   ModelFitUI
   Pharmacokinetics
   PharmacokineticsUI
+  REST
+  RESTService
 )
 
 if(MITK_ENABLE_PIC_READER)

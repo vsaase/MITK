@@ -46,17 +46,27 @@ public:
   static typename TYPE::Pointer load_itk_image(const std::string file)
   {
     mitk::LocaleSwitch localeSwitch("C");
+    std::streambuf *old = cout.rdbuf(); // <-- save
+    std::stringstream ss;
+    std::cout.rdbuf (ss.rdbuf());       // <-- redirect
+    std::vector< typename TYPE::Pointer > out;
     if (file.compare("")!=0 && itksys::SystemTools::FileExists(file))
     {
-      mitk::Image::Pointer image = mitk::IOUtil::Load<mitk::Image>(file);
-
-      typedef mitk::ImageToItk< TYPE > CasterType;
-      typename CasterType::Pointer caster = CasterType::New();
-      caster->SetInput(image);
-      caster->Update();
-      typename TYPE::Pointer itk_image = caster->GetOutput();
-      return itk_image;
+      mitk::Image::Pointer image = mitk::IOUtil::Load<mitk::Image>(file);  
+      if (image.IsNotNull())
+      {
+        typedef mitk::ImageToItk< TYPE > CasterType;
+        typename CasterType::Pointer caster = CasterType::New();
+        caster->SetInput(image);
+        caster->Update();
+        typename TYPE::Pointer itk_image = caster->GetOutput();
+        std::cout.rdbuf (old);              // <-- restore
+        MITK_INFO << "Loaded 1 image";
+        return itk_image;
+      }
     }
+    std::cout.rdbuf (old);              // <-- restore    // <-- restore
+    MITK_INFO << "Loaded 0 images";
     return nullptr;
   }
 
@@ -73,16 +83,18 @@ public:
       if (itksys::SystemTools::FileExists(f, true))
       {
         mitk::Image::Pointer image = mitk::IOUtil::Load<mitk::Image>(f);
+        if (image.IsNotNull())
+        {
+          typedef mitk::ImageToItk< TYPE > CasterType;
+          typename CasterType::Pointer caster = CasterType::New();
+          caster->SetInput(image);
+          caster->Update();
+          typename TYPE::Pointer itk_image = caster->GetOutput();
 
-        typedef mitk::ImageToItk< TYPE > CasterType;
-        typename CasterType::Pointer caster = CasterType::New();
-        caster->SetInput(image);
-        caster->Update();
-        typename TYPE::Pointer itk_image = caster->GetOutput();
-
-        out.push_back(itk_image);
-        if (filenames!=nullptr)
-          filenames->push_back(f);
+          out.push_back(itk_image);
+          if (filenames!=nullptr)
+            filenames->push_back(f);
+        }
       }
       else if (itksys::SystemTools::PathExists(f))
       {
@@ -93,16 +105,18 @@ public:
         for (auto file : list)
         {
           mitk::Image::Pointer image = mitk::IOUtil::Load<mitk::Image>(file);
+          if (image.IsNotNull())
+          {
+            typedef mitk::ImageToItk< TYPE > CasterType;
+            typename CasterType::Pointer caster = CasterType::New();
+            caster->SetInput(image);
+            caster->Update();
+            typename TYPE::Pointer itk_image = caster->GetOutput();
 
-          typedef mitk::ImageToItk< TYPE > CasterType;
-          typename CasterType::Pointer caster = CasterType::New();
-          caster->SetInput(image);
-          caster->Update();
-          typename TYPE::Pointer itk_image = caster->GetOutput();
-
-          out.push_back(itk_image);
-          if (filenames!=nullptr)
-            filenames->push_back(file);
+            out.push_back(itk_image);
+            if (filenames!=nullptr)
+              filenames->push_back(file);
+          }
         }
       }
     }

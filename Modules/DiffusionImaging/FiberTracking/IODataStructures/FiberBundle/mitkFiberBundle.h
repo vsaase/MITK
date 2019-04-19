@@ -36,6 +36,7 @@ See LICENSE.txt or http://www.mitk.org for details.
 #include <vtkTransform.h>
 #include <vtkFloatArray.h>
 #include <itkScalableAffineTransform.h>
+#include <mitkDiffusionFunctionCollection.h>
 
 namespace mitk {
 
@@ -95,7 +96,36 @@ public:
     void TransformFibers(double rx, double ry, double rz, double tx, double ty, double tz);
     void TransformFibers(itk::ScalableAffineTransform< mitk::ScalarType >::Pointer transform);
     void RemoveDir(vnl_vector_fixed<double,3> dir, double threshold);
-    itk::Point<float, 3> TransformPoint(vnl_vector_fixed< double, 3 > point, double rx, double ry, double rz, double tx, double ty, double tz);
+
+    template< class TType=float >
+    void TransformPoint(itk::Point<TType, 3>& point, itk::Matrix< TType, 3, 3>& rot, TType& tx, TType& ty, TType& tz)
+    {
+      mitk::Point3D center = this->GetGeometry()->GetCenter();
+
+      point[0] -= center[0];
+      point[1] -= center[1];
+      point[2] -= center[2];
+      point = rot*point;
+      point[0] += center[0]+tx;
+      point[1] += center[1]+ty;
+      point[2] += center[2]+tz;
+    }
+
+    template< class TType=float >
+    void TransformPoint(itk::Point<TType, 3>& point, TType rx, TType ry, TType rz, TType tx, TType ty, TType tz)
+    {
+      auto rot = mitk::imv::GetRotationMatrixItk<TType>(rx, ry, rz);
+      mitk::Point3D center = this->GetGeometry()->GetCenter();
+
+      point[0] -= center[0];
+      point[1] -= center[1];
+      point[2] -= center[2];
+      point = rot*point;
+      point[0] += center[0]+tx;
+      point[1] += center[1]+ty;
+      point[2] += center[2]+tz;
+    }
+
     itk::Matrix< double, 3, 3 > TransformMatrix(itk::Matrix< double, 3, 3 > m, double rx, double ry, double rz);
 
     // add/subtract fibers
@@ -105,7 +135,7 @@ public:
 
     // fiber subset extraction
     FiberBundle::Pointer           ExtractFiberSubset(DataNode *roi, DataStorage* storage);
-    std::vector<long>              ExtractFiberIdSubset(DataNode* roi, DataStorage* storage);
+    std::vector<unsigned int>      ExtractFiberIdSubset(DataNode* roi, DataStorage* storage);
     FiberBundle::Pointer           RemoveFibersOutside(ItkUcharImgType* mask, bool invert=false);
     float                          GetOverlap(ItkUcharImgType* mask);
     std::tuple<float, float>       GetDirectionalOverlap(ItkUcharImgType* mask, mitk::PeakImage::ItkPeakImageType* peak_image);
@@ -113,7 +143,7 @@ public:
     mitk::FiberBundle::Pointer     SubsampleFibers(float factor, bool random_seed);
 
     // get/set data
-    float GetFiberLength(int index) const { return m_FiberLengths.at(index); }
+    float GetFiberLength(unsigned int index) const { return m_FiberLengths.at(index); }
     vtkSmartPointer<vtkFloatArray> GetFiberWeights() const { return m_FiberWeights; }
     float GetFiberWeight(unsigned int fiber) const;
     void SetFiberWeights(float newWeight);
@@ -121,7 +151,7 @@ public:
     void SetFiberWeights(vtkSmartPointer<vtkFloatArray> weights);
     void SetFiberPolyData(vtkSmartPointer<vtkPolyData>, bool updateGeometry = true);
     vtkSmartPointer<vtkPolyData> GetFiberPolyData() const;
-    itkGetConstMacro( NumFibers, int)
+    itkGetConstMacro( NumFibers, unsigned int)
     //itkGetMacro( FiberSampling, int)
     itkGetConstMacro( MinFiberLength, float )
     itkGetConstMacro( MaxFiberLength, float )
@@ -134,7 +164,7 @@ public:
     void RequestUpdate3D(){ m_UpdateTime3D.Modified(); }
     void RequestUpdate(){ m_UpdateTime2D.Modified(); m_UpdateTime3D.Modified(); }
 
-    unsigned long GetNumberOfPoints() const;
+    unsigned int GetNumberOfPoints() const;
 
     // copy fiber bundle
     mitk::FiberBundle::Pointer GetDeepCopy();
@@ -145,7 +175,7 @@ public:
     itkSetMacro( ReferenceGeometry, mitk::BaseGeometry::Pointer )
     itkGetConstMacro( ReferenceGeometry, mitk::BaseGeometry::Pointer )
 
-    vtkSmartPointer<vtkPolyData>    GeneratePolyDataByIds(std::vector<long> fiberIds, vtkSmartPointer<vtkFloatArray> weights);
+    vtkSmartPointer<vtkPolyData>    GeneratePolyDataByIds(std::vector<unsigned int> fiberIds, vtkSmartPointer<vtkFloatArray> weights);
 
 protected:
 
@@ -153,7 +183,6 @@ protected:
     ~FiberBundle() override;
 
     void                            GenerateFiberIds();
-    itk::Point<float, 3>            GetItkPoint(double point[3]);
     void                            UpdateFiberGeometry();
     void                    PrintSelf(std::ostream &os, itk::Indent indent) const override;
 
@@ -165,7 +194,7 @@ private:
     // contains fiber ids
     vtkSmartPointer<vtkDataSet>   m_FiberIdDataSet;
 
-    int   m_NumFibers;
+    unsigned int m_NumFibers;
 
     vtkSmartPointer<vtkUnsignedCharArray> m_FiberColors;
     vtkSmartPointer<vtkFloatArray> m_FiberWeights;

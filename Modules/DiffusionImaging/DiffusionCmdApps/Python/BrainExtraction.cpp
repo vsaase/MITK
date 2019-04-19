@@ -31,7 +31,6 @@ See LICENSE.txt or http://www.mitk.org for details.
 #include <usModuleResourceStream.h>
 #include <BetData.h>
 #include <mitkPreferenceListReaderOptionsFunctor.h>
-
 #include <boost/algorithm/string.hpp>
 
 typedef mitk::DiffusionPropertyHelper DPH;
@@ -75,8 +74,8 @@ int main(int argc, char* argv[])
   parser.setContributor("MIC");
 
   parser.setArgumentPrefix("--", "-");
-  parser.addArgument("", "i", mitkCommandLineParser::InputFile, "Input:", "input image", us::Any(), false);
-  parser.addArgument("", "o", mitkCommandLineParser::OutputFile, "Output:", "output root", us::Any(), false);
+  parser.addArgument("", "i", mitkCommandLineParser::String, "Input:", "input image", us::Any(), false, false, false, mitkCommandLineParser::Input);
+  parser.addArgument("", "o", mitkCommandLineParser::String, "Output:", "output root", us::Any(), false, false, false, mitkCommandLineParser::Output);
 
   std::map<std::string, us::Any> parsedArgs = parser.parseArguments(argc, argv);
   if (parsedArgs.size()==0)
@@ -169,7 +168,7 @@ int main(int argc, char* argv[])
       name += outputs.at(i);
 
       if(types.at(i)=="input" && mitk::DiffusionPropertyHelper::IsDiffusionWeightedImage(mitk_image))
-        mitk::IOUtil::Save(image, "application/vnd.mitk.nii.gz", name+".nii.gz");
+        mitk::IOUtil::Save(image, "DWI_NIFTI", name+".nii.gz");
       else
         mitk::IOUtil::Save(image, name+".nii.gz");
     }

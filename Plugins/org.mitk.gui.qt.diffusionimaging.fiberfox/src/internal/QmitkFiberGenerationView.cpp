@@ -59,6 +59,7 @@ See LICENSE.txt or http://www.mitk.org for details.
 #include <itkAdcImageFilter.h>
 #include <itkShiftScaleImageFilter.h>
 #include <mitkITKImageImport.h>
+#include <itkRandomPhantomFilter.h>
 
 #include "mitkNodePredicateDataType.h"
 #include <mitkNodePredicateProperty.h>
@@ -95,31 +96,76 @@ void QmitkFiberGenerationView::CreateQtPartControl( QWidget *parent )
     m_Controls->setupUi( parent );
 
     m_ParameterFile = QDir::currentPath()+"/param.ffp";
-    connect((QObject*) m_Controls->m_GenerateFibersButton, SIGNAL(clicked()), (QObject*) this, SLOT(GenerateFibers()));
-    connect((QObject*) m_Controls->m_CircleButton, SIGNAL(clicked()), (QObject*) this, SLOT(OnDrawROI()));
-    connect((QObject*) m_Controls->m_FlipButton, SIGNAL(clicked()), (QObject*) this, SLOT(OnFlipButton()));
-    connect((QObject*) m_Controls->m_JoinBundlesButton, SIGNAL(clicked()), (QObject*) this, SLOT(JoinBundles()));
-    connect((QObject*) m_Controls->m_VarianceBox, SIGNAL(valueChanged(double)), (QObject*) this, SLOT(OnVarianceChanged(double)));
-    connect((QObject*) m_Controls->m_DistributionBox, SIGNAL(currentIndexChanged(int)), (QObject*) this, SLOT(OnDistributionChanged(int)));
-    connect((QObject*) m_Controls->m_FiberDensityBox, SIGNAL(valueChanged(int)), (QObject*) this, SLOT(OnFiberDensityChanged(int)));
-    connect((QObject*) m_Controls->m_FiberSamplingBox, SIGNAL(valueChanged(double)), (QObject*) this, SLOT(OnFiberSamplingChanged(double)));
-    connect((QObject*) m_Controls->m_TensionBox, SIGNAL(valueChanged(double)), (QObject*) this, SLOT(OnTensionChanged(double)));
-    connect((QObject*) m_Controls->m_ContinuityBox, SIGNAL(valueChanged(double)), (QObject*) this, SLOT(OnContinuityChanged(double)));
-    connect((QObject*) m_Controls->m_BiasBox, SIGNAL(valueChanged(double)), (QObject*) this, SLOT(OnBiasChanged(double)));
 
-    connect((QObject*) m_Controls->m_ConstantRadiusBox, SIGNAL(stateChanged(int)), (QObject*) this, SLOT(OnConstantRadius(int)));
-    connect((QObject*) m_Controls->m_CopyBundlesButton, SIGNAL(clicked()), (QObject*) this, SLOT(CopyBundles()));
-    connect((QObject*) m_Controls->m_TransformBundlesButton, SIGNAL(clicked()), (QObject*) this, SLOT(ApplyTransform()));
-    connect((QObject*) m_Controls->m_AlignOnGrid, SIGNAL(clicked()), (QObject*) this, SLOT(AlignOnGrid()));
+    connect(static_cast<QObject*>(m_Controls->m_RandomPhantomButton), SIGNAL(clicked()), static_cast<QObject*>(this), SLOT(RandomPhantom()));
+    connect(static_cast<QObject*>(m_Controls->m_GenerateFibersButton), SIGNAL(clicked()), static_cast<QObject*>(this), SLOT(GenerateFibers()));
+    connect(static_cast<QObject*>(m_Controls->m_CircleButton), SIGNAL(clicked()), static_cast<QObject*>(this), SLOT(OnDrawROI()));
+    connect(static_cast<QObject*>(m_Controls->m_FlipButton), SIGNAL(clicked()), static_cast<QObject*>(this), SLOT(OnFlipButton()));
+    connect(static_cast<QObject*>(m_Controls->m_JoinBundlesButton), SIGNAL(clicked()), static_cast<QObject*>(this), SLOT(JoinBundles()));
+    connect(static_cast<QObject*>(m_Controls->m_VarianceBox), SIGNAL(valueChanged(double)), static_cast<QObject*>(this), SLOT(OnVarianceChanged(double)));
+    connect(static_cast<QObject*>(m_Controls->m_DistributionBox), SIGNAL(currentIndexChanged(int)), static_cast<QObject*>(this), SLOT(OnDistributionChanged(int)));
+    connect(static_cast<QObject*>(m_Controls->m_FiberDensityBox), SIGNAL(valueChanged(int)), static_cast<QObject*>(this), SLOT(OnFiberDensityChanged(int)));
+    connect(static_cast<QObject*>(m_Controls->m_FiberSamplingBox), SIGNAL(valueChanged(double)), static_cast<QObject*>(this), SLOT(OnFiberSamplingChanged(double)));
+    connect(static_cast<QObject*>(m_Controls->m_TensionBox), SIGNAL(valueChanged(double)), static_cast<QObject*>(this), SLOT(OnTensionChanged(double)));
+    connect(static_cast<QObject*>(m_Controls->m_ContinuityBox), SIGNAL(valueChanged(double)), static_cast<QObject*>(this), SLOT(OnContinuityChanged(double)));
+    connect(static_cast<QObject*>(m_Controls->m_BiasBox), SIGNAL(valueChanged(double)), static_cast<QObject*>(this), SLOT(OnBiasChanged(double)));
 
+    connect(static_cast<QObject*>(m_Controls->m_ConstantRadiusBox), SIGNAL(stateChanged(int)), static_cast<QObject*>(this), SLOT(OnConstantRadius(int)));
+    connect(static_cast<QObject*>(m_Controls->m_CopyBundlesButton), SIGNAL(clicked()), static_cast<QObject*>(this), SLOT(CopyBundles()));
+    connect(static_cast<QObject*>(m_Controls->m_TransformBundlesButton), SIGNAL(clicked()), static_cast<QObject*>(this), SLOT(ApplyTransform()));
+    connect(static_cast<QObject*>(m_Controls->m_AlignOnGrid), SIGNAL(clicked()), static_cast<QObject*>(this), SLOT(AlignOnGrid()));
+    connect(static_cast<QObject*>(m_Controls->m_FidAxis1), SIGNAL(editingFinished()), static_cast<QObject*>(this), SLOT(UpdateFiducialPosition()));
+    connect(static_cast<QObject*>(m_Controls->m_FidAxis2), SIGNAL(editingFinished()), static_cast<QObject*>(this), SLOT(UpdateFiducialPosition()));
+    connect(static_cast<QObject*>(m_Controls->m_FidPosX), SIGNAL(editingFinished()), static_cast<QObject*>(this), SLOT(UpdateFiducialPosition()));
+    connect(static_cast<QObject*>(m_Controls->m_FidPosY), SIGNAL(editingFinished()), static_cast<QObject*>(this), SLOT(UpdateFiducialPosition()));
+    connect(static_cast<QObject*>(m_Controls->m_FidPosZ), SIGNAL(editingFinished()), static_cast<QObject*>(this), SLOT(UpdateFiducialPosition()));
+    connect(static_cast<QObject*>(m_Controls->m_FidTwist), SIGNAL(editingFinished()), static_cast<QObject*>(this), SLOT(UpdateFiducialPosition()));
 
-    connect((QObject*) m_Controls->m_AdvancedOptionsBox, SIGNAL( stateChanged(int)), (QObject*) this, SLOT(ShowAdvancedOptions(int)));
+    connect(static_cast<QObject*>(m_Controls->m_AdvancedOptionsBox), SIGNAL( stateChanged(int)), static_cast<QObject*>(this), SLOT(ShowAdvancedOptions(int)));
 
-    connect((QObject*) m_Controls->m_SaveParametersButton, SIGNAL(clicked()), (QObject*) this, SLOT(SaveParameters()));
-    connect((QObject*) m_Controls->m_LoadParametersButton, SIGNAL(clicked()), (QObject*) this, SLOT(LoadParameters()));
-
+    connect(static_cast<QObject*>(m_Controls->m_SaveParametersButton), SIGNAL(clicked()), static_cast<QObject*>(this), SLOT(SaveParameters()));
+    connect(static_cast<QObject*>(m_Controls->m_LoadParametersButton), SIGNAL(clicked()), static_cast<QObject*>(this), SLOT(LoadParameters()));
+    OnDistributionChanged(0);
   }
   UpdateGui();
+}
+
+void QmitkFiberGenerationView::RandomPhantom()
+{
+  itk::RandomPhantomFilter::Pointer filter = itk::RandomPhantomFilter::New();
+  filter->SetNumTracts(m_Controls->m_NumBundlesBox->value());
+  filter->SetMinStreamlineDensity(m_Controls->m_MinDensityBox->value());
+  filter->SetMaxStreamlineDensity(m_Controls->m_MaxDensityBox->value());
+  mitk::Vector3D vol;
+  vol[0] = m_Controls->m_VolumeSizeX->value();
+  vol[1] = m_Controls->m_VolumeSizeY->value();
+  vol[2] = m_Controls->m_VolumeSizeZ->value();
+  filter->SetVolumeSize(vol);
+  filter->SetStepSizeMin(m_Controls->m_StepSizeMinBox->value());
+  filter->SetStepSizeMax(m_Controls->m_StepSizeMaxBox->value());
+  filter->SetCurvynessMin(m_Controls->m_CurvyMinBox->value());
+  filter->SetCurvynessMax(m_Controls->m_CurvyMaxBox->value());
+  filter->SetStartRadiusMin(m_Controls->m_SizeMinBox->value());
+  filter->SetStartRadiusMax(m_Controls->m_SizeMaxBox->value());
+  filter->SetMinTwist(m_Controls->m_MinTwistBox->value());
+  filter->SetMaxTwist(m_Controls->m_MaxTwistBox->value());
+  filter->Update();
+  auto fibs = filter->GetFiberBundles();
+
+  std::vector< mitk::DataNode::Pointer > fiber_nodes;
+  int c = 1;
+  for (auto fib : fibs)
+  {
+    mitk::DataNode::Pointer node = mitk::DataNode::New();
+    node->SetData( fib );
+    node->SetName("Bundle_" + boost::lexical_cast<std::string>(c));
+    GetDataStorage()->Add(node);
+    fiber_nodes.push_back(node);
+    ++c;
+  }
+
+//  mitk::RenderingManager::GetInstance()->RequestUpdateAll();
+  mitk::RenderingManager::GetInstance()->InitializeViews(GetDataStorage()->ComputeVisibleBoundingGeometry3D());
 }
 
 void QmitkFiberGenerationView::UpdateParametersFromGui()
@@ -283,6 +329,66 @@ void QmitkFiberGenerationView::OnBiasChanged(double)
 {
   if (m_Controls->m_RealTimeFibers->isChecked())
     GenerateFibers();
+}
+
+void QmitkFiberGenerationView::UpdateFiducialPosition()
+{
+  if (m_SelectedFiducials.size()!=1)
+    return;
+
+  mitk::PlanarEllipse* pe = dynamic_cast<mitk::PlanarEllipse*>(m_SelectedFiducials.at(0)->GetData());
+  mitk::BaseGeometry* geom = pe->GetGeometry();
+
+  // translate
+  mitk::Point3D origin;
+  origin[0] = m_Controls->m_FidPosX->value();
+  origin[1] = m_Controls->m_FidPosY->value();
+  origin[2] = m_Controls->m_FidPosZ->value();
+
+  // transform control point coordinate into geometry translation
+  auto p0 = pe->GetControlPoint(0);
+  auto p1 = pe->GetControlPoint(1);
+  auto p2 = pe->GetControlPoint(2);
+  auto p3 = pe->GetControlPoint(3);
+
+  auto v1 = p1 - p0;
+  auto v2 = p2 - p0;
+  auto angle_deg = m_Controls->m_FidTwist->value();
+  auto dot = std::cos(itk::Math::pi*angle_deg/180.0);
+
+  vnl_matrix_fixed<double, 2, 2> tRot;
+  tRot[0][0] = dot;
+  tRot[1][1] = tRot[0][0];
+  tRot[1][0] = sin(acos(tRot[0][0]));
+  tRot[0][1] = -tRot[1][0];
+  if (angle_deg<0)
+    tRot = tRot.transpose();
+  vnl_vector_fixed<double, 2> vt; vt[0]=1; vt[1]=0;
+  vnl_vector_fixed<double, 2> v3 = tRot*vt;
+
+  if (v1.GetNorm()<0.0001 || v2.GetNorm()<0.0001)
+  {
+    QMessageBox::information( nullptr, "", "Please select exactly one fiducial.");
+    return;
+  }
+
+  v1.Normalize();
+  v2.Normalize();
+
+  p1 = p0 + v1*m_Controls->m_FidAxis1->value();
+  p2 = p0 + v2*m_Controls->m_FidAxis2->value();
+  p3 = p0 + mitk::Vector2D(v3);
+  pe->SetControlPoint(1, p1);
+  pe->SetControlPoint(2, p2);
+  pe->SetControlPoint(3, p3);
+  geom->SetOrigin(origin);
+
+  pe->Modified();
+
+  if (m_Controls->m_RealTimeFibers->isChecked())
+    GenerateFibers();
+
+  UpdateGui();
 }
 
 void QmitkFiberGenerationView::AlignOnGrid()
@@ -488,6 +594,7 @@ bool QmitkFiberGenerationView::CompareLayer(mitk::DataNode::Pointer i,mitk::Data
 
 void QmitkFiberGenerationView::GenerateFibers()
 {
+  UpdateGui();
   if (m_SelectedBundles.empty())
   {
     if (m_SelectedFiducial.IsNull())
@@ -792,20 +899,23 @@ void QmitkFiberGenerationView::JoinBundles()
     return;
   }
 
+  std::vector< mitk::FiberBundle::Pointer > to_add;
   std::vector<mitk::DataNode::Pointer>::const_iterator it = m_SelectedBundles.begin();
+  (*it)->SetVisibility(false);
   mitk::FiberBundle::Pointer newBundle = dynamic_cast<mitk::FiberBundle*>((*it)->GetData());
   QString name("");
   name += QString((*it)->GetName().c_str());
   ++it;
   for (; it!=m_SelectedBundles.end(); ++it)
   {
-    newBundle = newBundle->AddBundle(dynamic_cast<mitk::FiberBundle*>((*it)->GetData()));
-    name += "+"+QString((*it)->GetName().c_str());
+    (*it)->SetVisibility(false);
+    to_add.push_back(dynamic_cast<mitk::FiberBundle*>((*it)->GetData()));
   }
 
+  newBundle = newBundle->AddBundles(to_add);
   mitk::DataNode::Pointer fbNode = mitk::DataNode::New();
   fbNode->SetData(newBundle);
-  fbNode->SetName(name.toStdString());
+  fbNode->SetName("Joined");
   fbNode->SetVisibility(true);
   GetDataStorage()->Add(fbNode);
   mitk::RenderingManager::GetInstance()->RequestUpdateAll();
@@ -821,6 +931,7 @@ void QmitkFiberGenerationView::UpdateGui()
   m_Controls->m_CircleButton->setEnabled(false);
   m_Controls->m_JoinBundlesButton->setEnabled(false);
   m_Controls->m_AlignOnGrid->setEnabled(false);
+  m_Controls->m_FiducialAttributeBox->setEnabled(false);
 
   // Fiber generation gui
   if (m_SelectedFiducial.IsNotNull())
@@ -828,6 +939,45 @@ void QmitkFiberGenerationView::UpdateGui()
     m_Controls->m_TransformBundlesButton->setEnabled(true);
     m_Controls->m_FlipButton->setEnabled(true);
     m_Controls->m_AlignOnGrid->setEnabled(true);
+  }
+
+  if (m_SelectedFiducials.size()==1)
+  {
+    m_Controls->m_FiducialAttributeBox->setEnabled(true);
+    mitk::PlanarEllipse* pe = dynamic_cast<mitk::PlanarEllipse*>(m_SelectedFiducials.at(0)->GetData());
+    auto origin = pe->GetGeometry()->GetOrigin();
+    m_Controls->m_FidPosX->setValue(origin[0]);
+    m_Controls->m_FidPosY->setValue(origin[1]);
+    m_Controls->m_FidPosZ->setValue(origin[2]);
+
+
+    auto p0 = pe->GetControlPoint(0);
+    auto p1 = pe->GetControlPoint(1);
+    auto p2 = pe->GetControlPoint(2);
+    auto p3 = pe->GetControlPoint(3);
+
+    auto v1 = p1 - p0;
+    auto v2 = p2 - p0;
+
+    m_Controls->m_FidAxis1->setValue(v1.GetNorm());
+    m_Controls->m_FidAxis2->setValue(v2.GetNorm());
+
+    vnl_vector_fixed<double, 2> vt; vt[0]=1; vt[1]=0;
+    auto v3 = p3-p0; v3.Normalize();
+    auto angle = dot_product(vt, v3.GetVnlVector());
+    angle = std::acos(angle)*180.0/itk::Math::pi;
+    if (v3[1]<0)
+      angle *= -1;
+    m_Controls->m_FidTwist->setValue(angle);
+  }
+  else
+  {
+    m_Controls->m_FidPosX->setValue(0);
+    m_Controls->m_FidPosY->setValue(0);
+    m_Controls->m_FidPosZ->setValue(0);
+    m_Controls->m_FidAxis1->setValue(1);
+    m_Controls->m_FidAxis2->setValue(1);
+    m_Controls->m_FidTwist->setValue(0);
   }
 
   if (m_SelectedImageNode.IsNotNull() || !m_SelectedBundles.empty())
@@ -875,7 +1025,7 @@ void QmitkFiberGenerationView::OnSelectionChanged(berry::IWorkbenchPart::Pointer
       {
         m_SelectedBundles.push_back(node);
         mitk::FiberBundle::Pointer newFib = dynamic_cast<mitk::FiberBundle*>(node->GetData());
-        if (newFib->GetNumFibers()!=m_Controls->m_FiberDensityBox->value())
+        if (newFib->GetNumFibers()!=static_cast<unsigned int>(m_Controls->m_FiberDensityBox->value()))
           GenerateFibers();
       }
       else

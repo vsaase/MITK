@@ -37,6 +37,8 @@ if(NOT DEFINED ITK_DIR)
     -DModule_ITKReview:BOOL=ON
   # for 4.7, the OpenJPEG is needed by review but the variable must be set
     -DModule_ITKOpenJPEG:BOOL=ON
+  # Added Module for Wavelets
+    -DModule_IsotropicWavelets:BOOL=ON
   )
 
   if(CTEST_USE_LAUNCHERS)
@@ -47,11 +49,10 @@ if(NOT DEFINED ITK_DIR)
 
   ExternalProject_Add(${proj}
      LIST_SEPARATOR ${sep}
-     URL ${MITK_THIRDPARTY_DOWNLOAD_PREFIX_URL}/InsightToolkit-4.13.0.tar.xz
-     URL_MD5 3badf70cfb0093054453f66c5974c5a4
-     # work with external GDCM
-     PATCH_COMMAND ${PATCH_COMMAND} -N -p1 -i ${CMAKE_CURRENT_LIST_DIR}/ITK-VNL-2018-05-16.patch
+     URL ${MITK_THIRDPARTY_DOWNLOAD_PREFIX_URL}/InsightToolkit-4.13.1.tar.xz
+     URL_MD5 bc7296e7faccdcb5656a7669d4d875d2
      CMAKE_GENERATOR ${gen}
+     CMAKE_GENERATOR_PLATFORM ${gen_platform}
      CMAKE_ARGS
        ${ep_common_args}
        ${additional_cmake_args}

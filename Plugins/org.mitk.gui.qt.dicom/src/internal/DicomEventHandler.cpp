@@ -34,6 +34,7 @@ See LICENSE.txt or http://www.mitk.org for details.
 #include <mitkDICOMTagsOfInterestHelper.h>
 #include <mitkDICOMProperty.h>
 #include <mitkPropertyNameHelper.h>
+#include "mitkBaseDICOMReaderService.h"
 
 #include <mitkRTDoseReaderService.h>
 #include <mitkRTPlanReaderService.h>
@@ -114,12 +115,11 @@ void DicomEventHandler::OnSignalAddSeriesToDataManager(const ctkEvent& ctkEvent)
 
                 //set some specific colorwash and isoline properties
                 bool showColorWashGlobal = prefNode->GetBool(mitk::RTUIConstants::GLOBAL_VISIBILITY_COLORWASH_ID.c_str(), true);
-                bool showIsolinesGlobal = prefNode->GetBool(mitk::RTUIConstants::GLOBAL_VISIBILITY_ISOLINES_ID.c_str(), true);
 
                 //Set reference dose property
                 double referenceDose = prefNode->GetDouble(mitk::RTUIConstants::REFERENCE_DOSE_ID.c_str(), mitk::RTUIConstants::DEFAULT_REFERENCE_DOSE_VALUE);
 
-                mitk::ConfigureNodeAsDoseNode(doseImageNode, mitk::GeneratIsoLevels_Virtuos(), referenceDose, showColorWashGlobal);
+                mitk::ConfigureNodeAsDoseNode(doseImageNode, mitk::GenerateIsoLevels_Virtuos(), referenceDose, showColorWashGlobal);
 
                 ctkServiceReference serviceReference = mitk::PluginActivator::getContext()->getServiceReference<mitk::IDataStorageService>();
                 mitk::IDataStorageService* storageService = mitk::PluginActivator::getContext()->getService<mitk::IDataStorageService>(serviceReference);
@@ -212,27 +212,19 @@ void DicomEventHandler::OnSignalAddSeriesToDataManager(const ctkEvent& ctkEvent)
         mitk::DataNode::Pointer node = mitk::DataNode::New();
         node->SetData(data);
 
-        std::string nodeName = "Unnamed Dicom";
+        std::string nodeName = mitk::DataNode::NO_NAME_VALUE();
 
-        std::string studyUID = "";
-        std::string seriesUID = "";
-
-        data->GetPropertyList()->GetStringProperty("DICOM.0020.000D", studyUID);
-        data->GetPropertyList()->GetStringProperty("DICOM.0020.000E", seriesUID);
-
-        if (!studyUID.empty())
-        {
-          nodeName = studyUID;
+        auto nameDataProp = data->GetProperty("name");
+        if (nameDataProp.IsNotNull())
+        { //if data has a name property set by reader, use this name
+          nodeName = nameDataProp->GetValueAsString();
+        }
+        else
+        { //reader didn't specify a name, generate one.
+          nodeName = mitk::GenerateNameFromDICOMProperties(node);
         }
 
-        if (!seriesUID.empty())
-        {
-          if (!studyUID.empty())
-          {
-            nodeName += "/";
-          }
-          nodeName += seriesUID;
-        }
+        node->SetName(nodeName);
 
         dataStorage->Add(node);
       }
